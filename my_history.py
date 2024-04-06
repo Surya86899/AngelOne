@@ -1,16 +1,15 @@
-from SmartApi import SmartConnect
 import http.client
-from logzero import logger
 import requests
-from requests.packages.urllib3.exceptions import InsecureRequestWarning
+import certifi
+from logzero import logger
+from SmartApi import SmartConnect
 
-# Suppress SSL warnings
-requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
+# Specify the path to the CA certificates file
+ca_file = certifi.where()
 
 api_key = '2D95hkAA'
 smartApi = SmartConnect(api_key)
 
-conn = http.client.HTTPSConnection("apiconnect.angelbroking.com")
 payload = {
     "exchange": "NSE",
     "symboltoken": "3045",
@@ -20,7 +19,7 @@ payload = {
 }
 
 headers = {
-    'Authorization': 'Bearer eyJhbGciOiJIUzUxMiJ9.eyJ1c2VybmFtZSI6Iks0MjM3MTAiLCJyb2xlcyI6MCwidXNlcnR5cGUiOiJVU0VSIiwidG9rZW4iOiJleUpoYkdjaU9pSklVelV4TWlJc0luUjVjQ0k2SWtwWFZDSjkuZXlKemRXSWlPaUpMTkRJek56RXdJaXdpWlhod0lqb3hOekV4TnpFNU1UWXdMQ0pwWVhRaU9qRTNNVEUyTWpNeE1EUXNJbXAwYVNJNklqazJabVEwWldRNUxXTmlPR1F0TkRnMU1pMDRaR1UwTFRWbE5tTmxZVGxrTlRObFpTSXNJbTl0Ym1WdFlXNWhaMlZ5YVdRaU9qWXNJbk52ZFhKalpXbGtJam9pTXlJc0luVnpaWEpmZEhsd1pTSTZJbU5zYVdWdWRDSXNJblJ2YTJWdVgzUjVjR1VpT2lKMGNtRmtaVjloWTJObGMzTmZkRzlyWlc0aUxDSm5iVjlwWkNJNk5pd2ljMjkxY21ObElqb2lNeUlzSW1SbGRtbGpaVjlwWkNJNklqUmlZV0psT1RGaExUYzVZVGt0TXpoa05pMDRNelZrTFRnNE56QTJNMlExTTJRM055SXNJbUZqZENJNmUzMTkub0tCSG1menVSWnpHVlM4dTlFOE5sSTJ5LU8wTTBBdUJnSXRJMWZWbWlYeXFwekhqSHNGVFM5RlZ6dnVvdTNTZnlUdk1FLUlIMVR5Nk9ZTVI5b3hWN0EiLCJBUEktS0VZIjoiMkQ5NWhrQUEiLCJpYXQiOjE3MTE2MjMxNjQsImV4cCI6MTcxMTcxOTE2MH0.Z9MV3CH0Vj7vrGoLhrmQEYNTaq4c3IcA8T6EsPSO3G_vrn6eO8NkOMDP8sKXRw4-Us5_YIyxo_AImpzhDtsssw', # Jab bhi mai login karunga mujhe ek AUTHORIZATION_TOKEN milega usse daal kar mai sab kuch access kar paunga.
+    'Authorization': 'Bearer eyJhbGciOiJIUzUxMiJ9.eyJ1c2VybmFtZSI6Iks0MjM3MTAiLCJyb2xlcyI6MCwidXNlcnR5cGUiOiJVU0VSIiwidG9rZW4iOiJleUpoYkdjaU9pSklVelV4TWlJc0luUjVjQ0k2SWtwWFZDSjkuZXlKemRXSWlPaUpMTkRJek56RXdJaXdpWlhod0lqb3hOekV5TkRnMk5EZzFMQ0pwWVhRaU9qRTNNVEl6T0RVM05qQXNJbXAwYVNJNklqQTBZamxsT1RGa0xUaGhabUl0Tkdaa1l5MDRObVptTFdZM016WTRaREF3WmpnMlppSXNJbTl0Ym1WdFlXNWhaMlZ5YVdRaU9qWXNJbk52ZFhKalpXbGtJam9pTXlJc0luVnpaWEpmZEhsd1pTSTZJbU5zYVdWdWRDSXNJblJ2YTJWdVgzUjVjR1VpT2lKMGNtRmtaVjloWTJObGMzTmZkRzlyWlc0aUxDSm5iVjlwWkNJNk5pd2ljMjkxY21ObElqb2lNeUlzSW1SbGRtbGpaVjlwWkNJNklqUmlZV0psT1RGaExUYzVZVGt0TXpoa05pMDRNelZrTFRnNE56QTJNMlExTTJRM055SXNJbUZqZENJNmUzMTkuNUNuQ1h5eG9JSXJFcFVUU0R6TUFjZHMtbndXYkh3OHRWTk9qUk1vaUduYXlGNWdBdDRRN0RHVjczanZDTGJaTVE4X080VVZ2eEtRLXF5LVdzVlVsOHciLCJBUEktS0VZIjoiMkQ5NWhrQUEiLCJpYXQiOjE3MTIzODU4MjEsImV4cCI6MTcxMjQ4NjQ4NX0.7Aiq0qExHa1yjjYzgCvfEA23opRLdOaH54ZCoQqLTztjArG2kS4DInxMgbywFy3pvTb1hhQ55Ezzs5c5EV0U4w',  # Jab bhi mai login karunga mujhe ek AUTHORIZATION_TOKEN milega usse daal kar mai sab kuch access kar paunga.
     'Content-Type': 'application/json',
     'Accept': 'application/json',
     'X-UserType': 'USER',
@@ -31,10 +30,13 @@ headers = {
     'X-PrivateKey': '2D95hkAA'
 }
 
-conn.request("POST", "/rest/secure/angelbroking/historical/v1/getCandleData", payload, headers)
-res = conn.getresponse()
-data = res.read()
-print(data.decode("utf-8"))
+# Request to get candle data
+response = requests.post("https://apiconnect.angelbroking.com/rest/secure/angelbroking/historical/v1/getCandleData", json=payload, headers=headers)
+
+if response.status_code == 200:
+    print(response.json())  # Print or do something with the response data
+else:
+    print("Failed to get candle data")
 
 try:
     historicParam={
@@ -47,5 +49,3 @@ try:
     print(smartApi.getCandleData(historicParam))
 except Exception as e:
     logger.exception(f"Historic Api failed: {e}")
-
-# totp = "TCLINC5Z7VAZCVKJ4Y2FYRIVPE"
