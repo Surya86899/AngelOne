@@ -8,7 +8,8 @@ import logincred    # Contains my login credentials
 import login        # Contains my login code
 import logout       # Contains my login code
 from headers import headers     # Contains headers
-import my_profile
+import getprofile       # Contains my profile code
+import history
 
 # ************************Login****************************
 # jwt_token = login.my_login(logincred.api_key, logincred.username, logincred.pwd)
@@ -21,7 +22,40 @@ import my_profile
 
 
 # ************************Profile****************************
-# my_profile.profile()
+# getprofile.profile()
+# **********************************************************
+
+
+# ************************Historical Candle data****************************
+# # File path for the OpenAPIScripMaster.csv
+# file_path = 'OpenAPIScripMaster.csv'
+# # Name to search for
+# name_to_search = 'WIPRO'
+
+# # Searching for symbol and token based on the name
+# token, symbol = history.search_symbol_by_name(name_to_search, file_path)
+
+# if token and symbol:
+#     print(f"Token: {token}, Symbol: {symbol}")
+#     # Retrieving historical data for the symbol and token
+#     for i in range(2020, 2024):  # Adjust the range as per your requirement
+#         history.myhistory("NSE", token, "ONE_DAY", f"{i}-01-01 09:00", f"{i+1}-12-31 03:30",symbol)
+# else:
+#     print("Name not found.")
+# ************************Historical Candle data****************************
+
+
+# history.myhistory("NSE","11483","ONE_DAY","2020-12-31 09:00","2021-12-31 03:30")
+
+# payload = {
+#         "exchange": "NSE",
+#         "symboltoken": "3045",
+#         "interval": "ONE_DAY",
+#         "fromdate": "2024-02-27 09:00",
+#         "todate": "2024-04-08 03:30"
+#     }
+
+# Year on Year Data  (2020-12-31,2021-12-31),(2021-12-31,2022-12-31),(2022-12-31,2023-12-31),(2023-12-31,2024-12-31)
 # **********************************************************
 
 
