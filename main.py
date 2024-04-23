@@ -10,6 +10,7 @@ import logout       # Contains my login code
 from headers import headers     # Contains headers
 import getprofile       # Contains my profile code
 import history
+import normalorder
 
 # ************************Login****************************
 # jwt_token = login.my_login(logincred.api_key, logincred.username, logincred.pwd)
@@ -27,19 +28,20 @@ import history
 
 
 # ************************Historical Candle data****************************
-# # File path for the OpenAPIScripMaster.csv
-# file_path = 'OpenAPIScripMaster.csv'
-# # Name to search for
-# name_to_search = 'WIPRO'
+# File path for the OpenAPIScripMaster.csv
+file_path = 'OpenAPIScripMaster.csv'
+# Name to search for
+name_to_search = 'ABB'
 
-# # Searching for symbol and token based on the name
-# token, symbol = history.search_symbol_by_name(name_to_search, file_path)
+# Searching for symbol and token based on the name
+symbol_token,trading_symbol = history.search_symbol_by_name(name_to_search, file_path)
+print (symbol_token,trading_symbol)
 
-# if token and symbol:
-#     print(f"Token: {token}, Symbol: {symbol}")
+# if symbol_token and trading_symbol:
+#     print(f"Token: {symbol_token}, Symbol: {trading_symbol}")
 #     # Retrieving historical data for the symbol and token
 #     for i in range(2020, 2024):  # Adjust the range as per your requirement
-#         history.myhistory("NSE", token, "ONE_DAY", f"{i}-01-01 09:00", f"{i+1}-12-31 03:30",symbol)
+#         history.myhistory("NSE", symbol_token, "ONE_DAY", f"{i}-01-01 09:00", f"{i+1}-12-31 03:30",trading_symbol)
 # else:
 #     print("Name not found.")
 # ************************Historical Candle data****************************
@@ -100,3 +102,16 @@ import history
 # myfunds()
 # *************************************************************
 
+unique_order_id = normalorder.create_normal_order("NORMAL",trading_symbol,symbol_token,"BUY","NSE","LIMIT","INTRADAY","DAY","194.50","0","0","1")
+print(unique_order_id)
+# normalorder.modify_normal_order("NORMAL","201020000000080","LIMIT","INTRADAY","DAY","194.00","1")
+
+# normalorder.cancel_normal_order("NORMAL","201020000000080")
+
+# normalorder.get_normal_orderbook()
+
+# normalorder.get_normal_tradebook()
+
+# normalorder.get_ltp_data("NSE","SBIN-EQ","3045")
+
+normalorder.get_normal_individualorder(unique_order_id)

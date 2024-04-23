@@ -5,6 +5,7 @@ import csv
 import os
 from headers import headers
 
+# *************************Define function to create GTT rule*************************
 def create_gtt_rule(trading_symbol, symbol_token, exchange, transaction_type, product_type, price, qty, trigger_price, disclosed_qty, time_period):
     # Specify the path to the CA certificates file
     ca_file = certifi.where()
@@ -49,7 +50,7 @@ def create_gtt_rule(trading_symbol, symbol_token, exchange, transaction_type, pr
 
     return rule_id
 
-# Define function to modify GTT rule
+# *************************Define function to modify GTT rule*************************
 def modify_gtt_rule(rule_id, trading_symbol, symbol_token, exchange, transaction_type, product_type, price, qty, trigger_price, disclosed_qty, time_period):
     # Specify the path to the CA certificates file
     ca_file = certifi.where()
@@ -106,7 +107,8 @@ def modify_gtt_rule(rule_id, trading_symbol, symbol_token, exchange, transaction
     # Print the response
     print(data)
 
-# Define function to get GTT rule details
+
+# *************************Define function to get GTT rule details*************************
 def get_gtt_rule_details(rule_id):
     # Specify the path to the CA certificates file
     ca_file = certifi.where()
@@ -132,7 +134,7 @@ def get_gtt_rule_details(rule_id):
     # Print the response
     print(data.decode("utf-8"))
 
-# Define function to get all GTT rule details
+# *************************Define function to get all GTT rule details*************************
 def get_gtt_allrule_details():
     # Specify the path to the CA certificates file
     ca_file = certifi.where()
@@ -171,7 +173,7 @@ def get_gtt_allrule_details():
         print(json.dumps(order, indent=4))
         print()  # Add a line space between orders
 
-# Define function to cancel GTT rule
+# *************************Define function to cancel GTT rule*************************
 def cancel_gtt_rule(rule_id,symbol_token,ex_change):
     # Specify the path to the CA certificates file
     ca_file = certifi.where()
