@@ -42,7 +42,7 @@ def create_normal_order(variety,trading_symbol,symbol_token,transaction_type,exc
 
     return unique_order_id
 
-
+# ****************************Normal Order Modification****************************
 def modify_normal_order(variety,order_id,order_type,product_type,duration,price,qty):
 
     conn = http.client.HTTPSConnection("apiconnect.angelbroking.com")
@@ -62,7 +62,7 @@ def modify_normal_order(variety,order_id,order_type,product_type,duration,price,
     data = res.read()
     print(data.decode("utf-8"))
 
-
+# ****************************Normal Order Cancellation****************************
 def cancel_normal_order(variety,order_id):
     import http.client
     import json
@@ -102,7 +102,7 @@ def get_normal_tradebook():
     print(data.decode("utf-8"))
 
 
-# loss or profit of all trades
+# ****************************loss or profit of all trades****************************
 def get_ltp_data(exchange,trading_symbol,symbol_token):
 
     conn = http.client.HTTPSConnection("apiconnect.angelbroking.com")
@@ -119,7 +119,7 @@ def get_ltp_data(exchange,trading_symbol,symbol_token):
     data = res.read()
     print(data.decode("utf-8"))
 
-
+# ****************************Normal Order details****************************
 def get_normal_individualorder(unique_order_id):
 
     conn = http.client.HTTPSConnection("apiconnect.angelbroking.com")
