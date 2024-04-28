@@ -36,7 +36,7 @@ def myhistory(exchange, symbol_token, interval, start_date, end_date, symbol):
 
     # Writing candle data to CSV file
     csv_file_name = f"{symbol}_{interval}_candle_data.csv"
-    csv_file_path = os.path.join("C:/Documents/GitHub/Python/historical files", csv_file_name)
+    csv_file_path = os.path.join("C:/Documents/GitHub/AngelOne/historical files", csv_file_name)
 
     with open(csv_file_path, mode='a', newline='', encoding='utf-8') as file:
         writer = csv.writer(file)
