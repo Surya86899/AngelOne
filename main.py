@@ -30,7 +30,7 @@ import normalorder      # Contains my normal order manipulation code
 # File path for the OpenAPIScripMaster.csv
 file_path = 'OpenAPIScripMaster.csv'
 # Name to search for
-name_to_search = 'ABB'
+name_to_search = 'JINDALSTEL'
 
 # Searching for symbol and token based on the name
 symbol_token,trading_symbol = history.search_symbol_by_name(name_to_search, file_path)
@@ -39,13 +39,17 @@ print (symbol_token,trading_symbol)
 if symbol_token and trading_symbol:
     print(f"Token: {symbol_token}, Symbol: {trading_symbol}")
     # Retrieving historical data for the symbol and token
-    for i in range(2020, 2024):  # Adjust the range as per your requirement
-        history.myhistory("NSE", symbol_token, "ONE_DAY", f"{i}-01-01 09:00", f"{i+1}-12-31 03:30",trading_symbol)
+    for i in range(2019, 2024):  # Adjust the range as per your requirement
+        history.myhistory("NSE", symbol_token, "ONE_DAY", f"{i}-12-31 09:00", f"{i+1}-12-31 03:30",trading_symbol)
 else:
     print("Name not found.")
 # ************************Historical Candle data****************************
 
-# history.myhistory("NSE","11483","ONE_DAY","2020-12-31 09:00","2021-12-31 03:30")
+# if symbol_token and trading_symbol:
+#     history.myhistory("NSE",symbol_token,"ONE_DAY","2024-05-28 09:00","2024-06-04 03:30",trading_symbol)
+# else:
+#      print("Name not found.")
+
 
 # payload = {
 #         "exchange": "NSE",
