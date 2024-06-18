@@ -30,7 +30,7 @@ import normalorder      # Contains my normal order manipulation code
 # File path for the OpenAPIScripMaster.csv
 file_path = 'OpenAPIScripMaster.csv'
 # Name to search for
-name_to_search = 'JINDALSTEL'
+name_to_search = 'ABB'
 
 # Searching for symbol and token based on the name
 symbol_token,trading_symbol = history.search_symbol_by_name(name_to_search, file_path)
@@ -94,9 +94,11 @@ else:
 
 
 # **********************get my holdings**********************
-# Example usage
-# holdings.myholdings()
-# holdings.all_myholdings()
+# Example usage (Dono ka data holdings.csv mai save hota hai)
+# holdings.myholdings()   # sirf stocks ka details    
+# holdings.all_myholdings()   #stocks ke detail ke saath total(holding,invested,pnl,pnl in %)
+# holdings.get_position()   # stock position track karne ke liye
+# holdings.convert_position()   # not yet ready
 # *************************************************************
 
 
@@ -118,3 +120,4 @@ else:
 # normalorder.get_ltp_data("NSE","SBIN-EQ","3045")
 
 # normalorder.get_normal_individualorder(unique_order_id)
+

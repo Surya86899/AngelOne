@@ -1,15 +1,46 @@
+# Buy Condition
+
+# Buy Signal:
+# Buy a stock if:
+# Not currently invested.
+# VolumeRatio is at least 3.
+# CloseChange is at least 4%.
+# Current day's high is greater than the previous day's high.
+# DEMA_5 > DEMA_8 > DEMA_13.
+# Current day's close is greater than the open.
+# Calculate the maximum number of shares that can be bought with the available capital.
+# Update the positions list with the buy transaction.
+# Deduct the invested amount from capital.
+# Set invested to True and record the invested company and buy date.
+
+
+# Sell Condition
+
+# Sell Signal:
+# If currently invested, check the holding period and sell conditions.
+# Iterate through future dates up to the maximum holding period.
+# Sell if:
+# Next day's open price is at least 3% higher than the buy price (intraday sell).
+# Closing price is at least 4% higher than the buy price (normal sell).
+# End of the maximum holding period is reached.
+# Calculate profit from the sell transaction.
+# Update the positions list with the sell transaction.
+# Add the sale proceeds back to capital.
+# Set invested to False and reset invested_company.
+
+
 import pandas as pd
 import math
 
-def backtest_trading_strategy(data_list, initial_capital):
+def backtest_trading_strategy(data_list, initial_capital, max_holding_period=40):
     # Initialize variables to track trades and performance
     positions = []
     capital = initial_capital  # Use the full initial capital for trading
     profit = 0
     invested = False  # Flag to track if the capital is currently invested
     invested_company = None  # Track which company is currently invested
-    start = '2023-01-01T00:00:00+05:30'
-    end = '2023-12-31T00:00:00+05:30'
+    start = '2024-01-01T00:00:00+05:30'
+    end = '2024-12-31T00:00:00+05:30'
 
     # Iterate through each day's data for each company
     current_start_date = pd.Timestamp(start)
@@ -49,10 +80,11 @@ def backtest_trading_strategy(data_list, initial_capital):
                     capital -= buy_amount
                     invested = True
                     invested_company = company_index
+                    buy_date = current_start_date
 
             # Sell condition
             if invested and invested_company == company_index:
-                for future_date in pd.date_range(start=current_start_date + pd.Timedelta(days=1), end=current_start_date + pd.Timedelta(days=30), freq='B'):
+                for future_date in pd.date_range(start=current_start_date + pd.Timedelta(days=1), end=current_start_date + pd.Timedelta(days=max_holding_period), freq='B'):
                     if future_date in data.index:
                         sell_candidate = data.loc[future_date]
                         next_day_open = sell_candidate['Open']
@@ -79,6 +111,18 @@ def backtest_trading_strategy(data_list, initial_capital):
                             invested_company = None
                             sell_occurred = True
                             break
+                        elif future_date == buy_date + pd.Timedelta(days=max_holding_period):
+                            # Sell at the end of the maximum holding period
+                            sell_price = sell_candidate['Close']
+                            sell_amount = sell_price * positions[-1][3]
+                            profit += (sell_amount - positions[-1][2] * positions[-1][3])
+                            capital += sell_amount
+                            positions.append(('Sell (Max Holding Period)', sell_candidate.name.strftime('%Y-%m-%d'), sell_price, positions[-1][3]))
+                            invested = False
+                            invested_company = None
+                            sell_occurred = True
+                            break
+
             if sell_occurred:
                 current_start_date = sell_candidate.name
                 break
@@ -99,7 +143,7 @@ file_paths = [
     r"C:\Documents\GitHub\AngelOne\historical files\AXISBANK-EQ_ONE_DAY_candle_data.csv",
     r"C:\Documents\GitHub\AngelOne\historical files\BAJAJ-AUTO-EQ_ONE_DAY_candle_data.csv",
     r"C:\Documents\GitHub\AngelOne\historical files\BAJFINANCE-EQ_ONE_DAY_candle_data.csv",
-    r"C:\Documents\GitHub\AngelOne\historical files\BAJAJFINSV-EQ_ONE_DAY_candle_data.csv",
+    # r"C:\Documents\GitHub\AngelOne\historical files\BAJAJFINSV-EQ_ONE_DAY_candle_data.csv",
     r"C:\Documents\GitHub\AngelOne\historical files\BHARTIARTL-EQ_ONE_DAY_candle_data.csv",
     r"C:\Documents\GitHub\AngelOne\historical files\BPCL-EQ_ONE_DAY_candle_data.csv",
     r"C:\Documents\GitHub\AngelOne\historical files\BRITANNIA-EQ_ONE_DAY_candle_data.csv",
@@ -124,6 +168,7 @@ file_paths = [
     r"C:\Documents\GitHub\AngelOne\historical files\LT-EQ_ONE_DAY_candle_data.csv",
     r"C:\Documents\GitHub\AngelOne\historical files\M&M-EQ_ONE_DAY_candle_data.csv",
     r"C:\Documents\GitHub\AngelOne\historical files\MARUTI-EQ_ONE_DAY_candle_data.csv",
+    r"C:\Documents\GitHub\AngelOne\historical files\NESTLEIND-EQ_ONE_DAY_candle_data.csv",
     r"C:\Documents\GitHub\AngelOne\historical files\NTPC-EQ_ONE_DAY_candle_data.csv",
     r"C:\Documents\GitHub\AngelOne\historical files\ONGC-EQ_ONE_DAY_candle_data.csv",
     r"C:\Documents\GitHub\AngelOne\historical files\POWERGRID-EQ_ONE_DAY_candle_data.csv",
@@ -131,41 +176,26 @@ file_paths = [
     r"C:\Documents\GitHub\AngelOne\historical files\SBILIFE-EQ_ONE_DAY_candle_data.csv",
     r"C:\Documents\GitHub\AngelOne\historical files\SBIN-EQ_ONE_DAY_candle_data.csv",
     r"C:\Documents\GitHub\AngelOne\historical files\SUNPHARMA-EQ_ONE_DAY_candle_data.csv",
-    r"C:\Documents\GitHub\AngelOne\historical files\TCS-EQ_ONE_DAY_candle_data.csv",
     r"C:\Documents\GitHub\AngelOne\historical files\TATACONSUM-EQ_ONE_DAY_candle_data.csv",
     r"C:\Documents\GitHub\AngelOne\historical files\TATAMOTORS-EQ_ONE_DAY_candle_data.csv",
     r"C:\Documents\GitHub\AngelOne\historical files\TATASTEEL-EQ_ONE_DAY_candle_data.csv",
+    r"C:\Documents\GitHub\AngelOne\historical files\TCS-EQ_ONE_DAY_candle_data.csv",
     r"C:\Documents\GitHub\AngelOne\historical files\TECHM-EQ_ONE_DAY_candle_data.csv",
     r"C:\Documents\GitHub\AngelOne\historical files\TITAN-EQ_ONE_DAY_candle_data.csv",
     r"C:\Documents\GitHub\AngelOne\historical files\ULTRACEMCO-EQ_ONE_DAY_candle_data.csv",
     r"C:\Documents\GitHub\AngelOne\historical files\UPL-EQ_ONE_DAY_candle_data.csv",
-    r"C:\Documents\GitHub\AngelOne\historical files\WIPRO-EQ_ONE_DAY_candle_data.csv",
-    r"C:\Documents\GitHub\AngelOne\historical files\NESTLEIND-EQ_ONE_DAY_candle_data.csv",
-    r"C:\Documents\GitHub\AngelOne\historical files\JINDALSTEL-EQ_ONE_DAY_candle_data.csv"
+    r"C:\Documents\GitHub\AngelOne\historical files\WIPRO-EQ_ONE_DAY_candle_data.csv"
 ]
-data_list = [pd.read_csv(file_path, parse_dates=['Timestamp']) for file_path in file_paths]
 
-for df in data_list:
-    df.rename(columns={'Timestamp': 'Date'}, inplace=True)
-    df.set_index('Date', inplace=True)
+# Load data into a list of DataFrames
+data_list = [pd.read_csv(file_path, parse_dates=['Timestamp'], index_col='Timestamp') for file_path in file_paths]
 
-# Debug: Print data summary for each company
-# for index, df in enumerate(data_list):
-#     print(f"Company {index} Data Summary:")
-#     print(df.head(2))
-#     print(df.tail(2))
-#     print()
+# Run the backtest
+positions, final_capital, final_profit_percentage = backtest_trading_strategy(data_list, initial_capital=500000)
 
-# Set initial capital for backtesting
-initial_capital = 500000  # Total initial capital
-
-# Perform backtesting
-positions, final_capital, final_profit_percentage = backtest_trading_strategy(data_list, initial_capital)
-
-# Output results
+# Output the results
 print("Positions:")
 for position in positions:
     print(position)
-
-print(f"\nFinal Capital: ${final_capital:.2f}")
-print(f"Final Profit Percentage: {final_profit_percentage:.2f}%")
+print("Final Capital:", final_capital)
+print("Final Profit Percentage:", final_profit_percentage)

@@ -1,170 +1,92 @@
 import pandas as pd
-import math
+import numpy as np
+import matplotlib.pyplot as plt
 
-def backtest_trading_strategy(data_list, initial_capital, max_holding_period=40):
-    # Initialize variables to track trades and performance
-    positions = []
-    capital = initial_capital  # Use the full initial capital for trading
-    profit = 0
-    invested = False  # Flag to track if the capital is currently invested
-    invested_company = None  # Track which company is currently invested
-    start = '2023-01-01T00:00:00+05:30'
-    end = '2023-12-31T00:00:00+05:30'
+def Supertrend(df, period=10, multiplier=3):
+    hl2 = (df['High'] + df['Low']) / 2
+    df['ATR'] = df['High'].rolling(window=period).max() - df['Low'].rolling(window=period).min()
+    df['Upperband'] = hl2 + (multiplier * df['ATR'])
+    df['Lowerband'] = hl2 - (multiplier * df['ATR'])
+    df['Supertrend'] = np.nan
+    df['Supertrend Direction'] = 0
 
-    # Iterate through each day's data for each company
-    current_start_date = pd.Timestamp(start)
-    while current_start_date <= pd.Timestamp(end):
-        sell_occurred = False
-        for company_index, data in enumerate(data_list):
-            if current_start_date not in data.index:
-                continue
+    for current in range(1, len(df.index)):
+        previous = current - 1
 
-            today = data.loc[current_start_date]
-            previous_date = current_start_date - pd.Timedelta(days=1)
-            previous = data.loc[previous_date] if previous_date in data.index else None
+        if (df['Close'].iloc[current] > df['Upperband'].iloc[previous]):
+            df.loc[df.index[current], 'Supertrend'] = df['Lowerband'].iloc[current]
+            df.loc[df.index[current], 'Supertrend Direction'] = 1
+        elif (df['Close'].iloc[current] < df['Lowerband'].iloc[previous]):
+            df.loc[df.index[current], 'Supertrend'] = df['Upperband'].iloc[current]
+            df.loc[df.index[current], 'Supertrend Direction'] = -1
+        else:
+            df.loc[df.index[current], 'Supertrend'] = df['Supertrend'].iloc[previous]
+            df.loc[df.index[current], 'Supertrend Direction'] = df['Supertrend Direction'].iloc[previous]
 
-            if previous is None:
-                continue
+    return df
 
-            # Calculate indicators for today
-            data.loc[current_start_date, 'VolumeRatio'] = today['Volume'] / previous['Volume'] if previous['Volume'] != 0 else 0
-            data.loc[current_start_date, 'CloseChange'] = (today['Close'] - previous['Close']) / previous['Close'] * 100
-            data.loc[current_start_date, 'DEMA_5'] = data['Close'].ewm(span=5).mean().loc[current_start_date]
-            data.loc[current_start_date, 'DEMA_8'] = data['Close'].ewm(span=8).mean().loc[current_start_date]
-            data.loc[current_start_date, 'DEMA_13'] = data['Close'].ewm(span=13).mean().loc[current_start_date]
+# Load historical price data
+df = pd.read_csv(r'C:\Documents\GitHub\AngelOne\historical files\ABB-EQ_ONE_DAY_candle_data.csv')
+df['Timestamp'] = pd.to_datetime(df['Timestamp'])
+df.set_index('Timestamp', inplace=True)
 
-            # Buy condition
-            if not invested and \
-               data.loc[current_start_date, 'VolumeRatio'] >= 3 and \
-               data.loc[current_start_date, 'CloseChange'] >= 4 and \
-               today['High'] > previous['High'] and \
-               data.loc[current_start_date, 'DEMA_5'] > data.loc[current_start_date, 'DEMA_8'] > data.loc[current_start_date, 'DEMA_13'] and \
-               today['Close'] > today['Open']:
-                
-                max_shares = math.floor(capital / today['Close'])
-                
-                if max_shares > 0:
-                    buy_amount = max_shares * today['Close']
-                    positions.append(('Buy', today.name.strftime('%Y-%m-%d'), today['Close'], max_shares, capital, company_index))
-                    capital -= buy_amount
-                    invested = True
-                    invested_company = company_index
-                    buy_date = current_start_date
+# Calculate Supertrend indicator
+df = Supertrend(df)
 
-            # Sell condition
-            if invested and invested_company == company_index:
-                for future_date in pd.date_range(start=current_start_date + pd.Timedelta(days=1), end=current_start_date + pd.Timedelta(days=max_holding_period), freq='B'):
-                    if future_date in data.index:
-                        sell_candidate = data.loc[future_date]
-                        next_day_open = sell_candidate['Open']
+# Implement the strategy
+initial_balance = 10000
+balance = initial_balance
+position = None
+entry_price = 0
+stop_loss = 0
+take_profit = 0
+risk_reward_ratio = 3
+risk_percentage = 0.01
 
-                        if next_day_open >= (positions[-1][2] * 1.03):
-                            # Intraday sell for at least 3% profit
-                            intraday_sell_price = next_day_open
-                            sell_amount = intraday_sell_price * positions[-1][3]
-                            profit += (sell_amount - positions[-1][2] * positions[-1][3])
-                            capital += sell_amount
-                            positions.append(('Sell (Intraday)', sell_candidate.name.strftime('%Y-%m-%d'), intraday_sell_price, positions[-1][3]))
-                            invested = False
-                            invested_company = None
-                            sell_occurred = True
-                            break
-                        elif sell_candidate['Close'] >= (positions[-1][2] * 1.04):
-                            # Normal sell at least 4% higher
-                            sell_price = sell_candidate['Close']
-                            sell_amount = sell_price * positions[-1][3]
-                            profit += (sell_amount - positions[-1][2] * positions[-1][3])
-                            capital += sell_amount
-                            positions.append(('Sell', sell_candidate.name.strftime('%Y-%m-%d'), sell_price, positions[-1][3]))
-                            invested = False
-                            invested_company = None
-                            sell_occurred = True
-                            break
-                        elif future_date == buy_date + pd.Timedelta(days=max_holding_period):
-                            # Sell at the end of the maximum holding period
-                            sell_price = sell_candidate['Close']
-                            sell_amount = sell_price * positions[-1][3]
-                            profit += (sell_amount - positions[-1][2] * positions[-1][3])
-                            capital += sell_amount
-                            positions.append(('Sell (Max Holding Period)', sell_candidate.name.strftime('%Y-%m-%d'), sell_price, positions[-1][3]))
-                            invested = False
-                            invested_company = None
-                            sell_occurred = True
-                            break
+trade_log = []
+min_gap = 5  # Minimum number of bars to wait before taking a new trade
 
-            if sell_occurred:
-                current_start_date = sell_candidate.name
-                break
-        current_start_date += pd.Timedelta(days=1)
+i = 0
+while i < len(df):
+    if position is None:
+        if i > 0 and df['Supertrend Direction'].iloc[i] == 1 and df['Supertrend Direction'].iloc[i-1] == 1:
+            position = 'long'
+            entry_price = df['Close'].iloc[i]
+            stop_loss = entry_price - (entry_price * risk_percentage)
+            take_profit = entry_price + ((entry_price - stop_loss) * risk_reward_ratio)
+            trade_log.append(('BUY', df.index[i], entry_price, stop_loss, take_profit, balance))
+    elif position == 'long':
+        if df['Close'].iloc[i] <= stop_loss or df['Close'].iloc[i] >= take_profit or df['Supertrend Direction'].iloc[i] == -1:
+            exit_price = df['Close'].iloc[i]
+            profit = exit_price - entry_price
+            balance += profit
+            trade_log.append(('SELL', df.index[i], exit_price, stop_loss, take_profit, balance))
+            position = None
+            i += min_gap  # Add a gap before the next trade
+    i += 1
 
-    # Calculate final profit percentage
-    final_profit_percentage = ((capital - initial_capital) / initial_capital) * 100
+# Convert trade log to DataFrame for better visualization
+trade_log_df = pd.DataFrame(trade_log, columns=['Action', 'Date', 'Price', 'Stop Loss', 'Take Profit', 'Balance'])
 
-    return positions, capital, final_profit_percentage
+# Plot results
+plt.figure(figsize=(14, 7))
+plt.plot(df['Close'], label='Close Price')
+plt.plot(df['Supertrend'], label='Supertrend')
+buy_signals = trade_log_df[trade_log_df['Action'] == 'BUY']
+sell_signals = trade_log_df[trade_log_df['Action'] == 'SELL']
+plt.scatter(buy_signals['Date'], buy_signals['Price'], marker='^', color='green', label='Buy Signal')
+plt.scatter(sell_signals['Date'], sell_signals['Price'], marker='v', color='red', label='Sell Signal')
+plt.title('Supertrend Strategy Backtest')
+plt.xlabel('Date')
+plt.ylabel('Price')
+plt.legend()
+plt.xticks(rotation=45)
+plt.grid()
+plt.show()
 
-# Load historical stock data for multiple companies from CSV files
-file_paths = [
-    # r"C:\Documents\GitHub\AngelOne\historical files\ABB-EQ_ONE_DAY_candle_data.csv",
-    r"C:\Documents\GitHub\AngelOne\historical files\ADANIENT-EQ_ONE_DAY_candle_data.csv",
-    r"C:\Documents\GitHub\AngelOne\historical files\ADANIPORTS-EQ_ONE_DAY_candle_data.csv",
-    r"C:\Documents\GitHub\AngelOne\historical files\APOLLOHOSP-EQ_ONE_DAY_candle_data.csv",
-    r"C:\Documents\GitHub\AngelOne\historical files\ASIANPAINT-EQ_ONE_DAY_candle_data.csv",
-    r"C:\Documents\GitHub\AngelOne\historical files\AXISBANK-EQ_ONE_DAY_candle_data.csv",
-    r"C:\Documents\GitHub\AngelOne\historical files\BAJAJ-AUTO-EQ_ONE_DAY_candle_data.csv",
-    r"C:\Documents\GitHub\AngelOne\historical files\BAJFINANCE-EQ_ONE_DAY_candle_data.csv",
-    # r"C:\Documents\GitHub\AngelOne\historical files\BAJAJFINSV-EQ_ONE_DAY_candle_data.csv",
-    r"C:\Documents\GitHub\AngelOne\historical files\BHARTIARTL-EQ_ONE_DAY_candle_data.csv",
-    r"C:\Documents\GitHub\AngelOne\historical files\BPCL-EQ_ONE_DAY_candle_data.csv",
-    r"C:\Documents\GitHub\AngelOne\historical files\BRITANNIA-EQ_ONE_DAY_candle_data.csv",
-    r"C:\Documents\GitHub\AngelOne\historical files\CIPLA-EQ_ONE_DAY_candle_data.csv",
-    r"C:\Documents\GitHub\AngelOne\historical files\COALINDIA-EQ_ONE_DAY_candle_data.csv",
-    r"C:\Documents\GitHub\AngelOne\historical files\DIVISLAB-EQ_ONE_DAY_candle_data.csv",
-    r"C:\Documents\GitHub\AngelOne\historical files\DRREDDY-EQ_ONE_DAY_candle_data.csv",
-    r"C:\Documents\GitHub\AngelOne\historical files\EICHERMOT-EQ_ONE_DAY_candle_data.csv",
-    r"C:\Documents\GitHub\AngelOne\historical files\GRASIM-EQ_ONE_DAY_candle_data.csv",
-    r"C:\Documents\GitHub\AngelOne\historical files\HCLTECH-EQ_ONE_DAY_candle_data.csv",
-    r"C:\Documents\GitHub\AngelOne\historical files\HDFCBANK-EQ_ONE_DAY_candle_data.csv",
-    r"C:\Documents\GitHub\AngelOne\historical files\HDFCLIFE-EQ_ONE_DAY_candle_data.csv",
-    r"C:\Documents\GitHub\AngelOne\historical files\HEROMOTOCO-EQ_ONE_DAY_candle_data.csv",
-    r"C:\Documents\GitHub\AngelOne\historical files\HINDALCO-EQ_ONE_DAY_candle_data.csv",
-    r"C:\Documents\GitHub\AngelOne\historical files\HINDUNILVR-EQ_ONE_DAY_candle_data.csv",
-    r"C:\Documents\GitHub\AngelOne\historical files\ICICIBANK-EQ_ONE_DAY_candle_data.csv",
-    r"C:\Documents\GitHub\AngelOne\historical files\INDUSINDBK-EQ_ONE_DAY_candle_data.csv",
-    r"C:\Documents\GitHub\AngelOne\historical files\INFY-EQ_ONE_DAY_candle_data.csv",
-    r"C:\Documents\GitHub\AngelOne\historical files\ITC-EQ_ONE_DAY_candle_data.csv",
-    r"C:\Documents\GitHub\AngelOne\historical files\JSWSTEEL-EQ_ONE_DAY_candle_data.csv",
-    r"C:\Documents\GitHub\AngelOne\historical files\KOTAKBANK-EQ_ONE_DAY_candle_data.csv",
-    r"C:\Documents\GitHub\AngelOne\historical files\LT-EQ_ONE_DAY_candle_data.csv",
-    r"C:\Documents\GitHub\AngelOne\historical files\M&M-EQ_ONE_DAY_candle_data.csv",
-    r"C:\Documents\GitHub\AngelOne\historical files\MARUTI-EQ_ONE_DAY_candle_data.csv",
-    r"C:\Documents\GitHub\AngelOne\historical files\NESTLEIND-EQ_ONE_DAY_candle_data.csv",
-    r"C:\Documents\GitHub\AngelOne\historical files\NTPC-EQ_ONE_DAY_candle_data.csv",
-    r"C:\Documents\GitHub\AngelOne\historical files\ONGC-EQ_ONE_DAY_candle_data.csv",
-    r"C:\Documents\GitHub\AngelOne\historical files\POWERGRID-EQ_ONE_DAY_candle_data.csv",
-    r"C:\Documents\GitHub\AngelOne\historical files\RELIANCE-EQ_ONE_DAY_candle_data.csv",
-    r"C:\Documents\GitHub\AngelOne\historical files\SBILIFE-EQ_ONE_DAY_candle_data.csv",
-    r"C:\Documents\GitHub\AngelOne\historical files\SBIN-EQ_ONE_DAY_candle_data.csv",
-    r"C:\Documents\GitHub\AngelOne\historical files\SUNPHARMA-EQ_ONE_DAY_candle_data.csv",
-    r"C:\Documents\GitHub\AngelOne\historical files\TATACONSUM-EQ_ONE_DAY_candle_data.csv",
-    r"C:\Documents\GitHub\AngelOne\historical files\TATAMOTORS-EQ_ONE_DAY_candle_data.csv",
-    r"C:\Documents\GitHub\AngelOne\historical files\TATASTEEL-EQ_ONE_DAY_candle_data.csv",
-    r"C:\Documents\GitHub\AngelOne\historical files\TCS-EQ_ONE_DAY_candle_data.csv",
-    r"C:\Documents\GitHub\AngelOne\historical files\TECHM-EQ_ONE_DAY_candle_data.csv",
-    r"C:\Documents\GitHub\AngelOne\historical files\TITAN-EQ_ONE_DAY_candle_data.csv",
-    r"C:\Documents\GitHub\AngelOne\historical files\ULTRACEMCO-EQ_ONE_DAY_candle_data.csv",
-    r"C:\Documents\GitHub\AngelOne\historical files\UPL-EQ_ONE_DAY_candle_data.csv",
-    r"C:\Documents\GitHub\AngelOne\historical files\WIPRO-EQ_ONE_DAY_candle_data.csv"
-]
+# Print trade log
+print(trade_log_df)
 
-# Load data into a list of DataFrames
-data_list = [pd.read_csv(file_path, parse_dates=['Timestamp'], index_col='Timestamp') for file_path in file_paths]
-
-# Run the backtest
-positions, final_capital, final_profit_percentage = backtest_trading_strategy(data_list, initial_capital=500000)
-
-# Output the results
-print("Positions:")
-for position in positions:
-    print(position)
-print("Final Capital:", final_capital)
-print("Final Profit Percentage:", final_profit_percentage)
+# Print final balance
+print(f"Initial Balance: ${initial_balance}")
+print(f"Final Balance: ${balance}")

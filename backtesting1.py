@@ -1,7 +1,10 @@
 import pandas as pd
 import math
 
-def backtest_trading_strategy(data, initial_capital):
+def backtest_trading_strategy(data, initial_capital, start, end):
+    # Filter data for the specified date range
+    data = data.loc[(data.index >= start) & (data.index <= end)].copy()
+
     # Calculate necessary indicators (volume, price changes, moving averages)
     data['VolumeRatio'] = data['Volume'] / data['Volume'].shift(1)
     data['CloseChange'] = data['Close'].pct_change() * 100
@@ -14,6 +17,9 @@ def backtest_trading_strategy(data, initial_capital):
     capital = initial_capital  # Use the full initial capital for trading
     profit = 0
 
+    # Ensure that the dates are sorted
+    data.sort_index(inplace=True)
+
     # Iterate through each day's data to apply the trading strategy
     for i in range(1, len(data)):
         today = data.iloc[i]
@@ -25,7 +31,6 @@ def backtest_trading_strategy(data, initial_capital):
             today['High'] > previous['High'] and
             today['DEMA_5'] > today['DEMA_8'] > today['DEMA_13'] and
             today['Close'] > today['Open']):
-            
             
             # Calculate maximum number of shares that can be bought with available capital
             max_shares = math.floor(capital / today['Close'])
@@ -75,10 +80,14 @@ df.rename(columns={'Timestamp': 'Date'}, inplace=True)
 df.set_index('Date', inplace=True)
 
 # Set initial capital for backtesting
-initial_capital = 50000  # Total initial capital
+initial_capital = 500000  # Total initial capital
+
+# Set the start and end dates for the backtesting period
+start_date = '2024-01-01'
+end_date = '2024-12-31'
 
 # Perform backtesting
-positions, final_capital, final_profit_percentage = backtest_trading_strategy(df, initial_capital)
+positions, final_capital, final_profit_percentage = backtest_trading_strategy(df, initial_capital, start_date, end_date)
 
 # Output results
 print("Positions:")
