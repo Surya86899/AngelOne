@@ -2,8 +2,8 @@ import nselib
 from nselib.capital_market import capital_market_data
 
 # ******************************Working*****************************************
-# print(nselib.trading_holiday_calendar())
-# print(capital_market_data.get_price_volume_and_deliverable_position_data(symbol='ABB', from_date='01-01-2024', to_date='26-06-2024'))
+print(nselib.trading_holiday_calendar())
+# print(capital_market_data.get_price_volume_and_deliverable_position_data(symbol='ABB', from_date='01-01-2023', to_date='31-12-2023'))
 # print(capital_market_data.india_vix_data(from_date='19-04-2024', to_date='26-04-2024', period = '1M'))
 # print(capital_market_data.index_data('NIFTY 50', from_date='19-04-2024', to_date='26-04-2024', period = '1W'))
 # print(capital_market_data.bulk_deal_data(from_date='01-04-2024', to_date='26-04-2024', period= '1M'))
