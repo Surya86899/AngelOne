@@ -31,4 +31,4 @@ def my_login(api_key, username, pwd):
         # Save the modified headers back to the headers.py file
         with open('headers.py', 'w') as file:
             file.write('headers = ' + str(headers))
-
+    return data

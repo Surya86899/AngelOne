@@ -143,3 +143,29 @@ length = 9 # No of days
 # indicators.visualize_bollinger_bands(df_with_bbands)
 
 # *************************Bollinger Bands Calculation and Visualization*************************
+
+
+
+# *************************Average True Range (ATR) Calculation and Visualization*************************
+
+
+
+# *************************Average True Range (ATR) Calculation and Visualization*************************
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

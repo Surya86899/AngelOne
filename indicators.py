@@ -90,6 +90,25 @@ def calculate_supertrend(file_path, lookback, multiplier, start_date=None, end_d
     
     return data, supertrend, uptrend, downtrend, close  # Return filtered data and close prices for plotting
 
+def calculation_supertrend(data, atr_period=7, multiplier=3):
+    hl2 = (data['High'] + data['Low']) / 2
+    atr = data['High'].rolling(atr_period).max() - data['Low'].rolling(atr_period).min()
+    atr = atr.rolling(atr_period).mean()
+
+    supertrend = pd.DataFrame(index=data.index, columns=['Supertrend', 'Trend'])
+    supertrend['Supertrend'] = hl2 + (multiplier * atr)
+    supertrend['Trend'] = 1
+
+    for i in range(1, len(supertrend)):
+        if data['Close'].iloc[i] > supertrend['Supertrend'].iloc[i - 1]:
+            supertrend.loc[supertrend.index[i], 'Supertrend'] = hl2.iloc[i] - (multiplier * atr.iloc[i])
+            supertrend.loc[supertrend.index[i], 'Trend'] = 1
+        elif data['Close'].iloc[i] < supertrend['Supertrend'].iloc[i - 1]:
+            supertrend.loc[supertrend.index[i], 'Supertrend'] = hl2.iloc[i] + (multiplier * atr.iloc[i])
+            supertrend.loc[supertrend.index[i], 'Trend'] = -1
+
+    return supertrend['Supertrend'], supertrend['Trend']
+
 def visualize_supertrend(data, supertrend_values, uptrend, downtrend):
     # Prepare the data for candlestick plot
     ohlc = data[['Timestamp', 'Open', 'High', 'Low', 'Close']].copy()
@@ -148,6 +167,9 @@ def calculate_EMA(file_path, length, start_date=None, end_date=None):
     data['EMA'] = ta.trend.ema_indicator(data['Close'], window=length)
     
     return data['EMA']
+
+def calculation_EMA(close_prices, length):
+    return ta.trend.ema_indicator(close_prices, window=length)
 
 def visualize_EMA(file_path, length, ema_values, start_date=None, end_date=None):
     # Read the data from the CSV file
@@ -247,6 +269,14 @@ def calculate_macd(file_path, start_date, end_date, fast_length=14, slow_length=
 
     return df
 
+def calculation_macd(data, fast_period=12, slow_period=26, signal_period=9):
+    fast_ema = data['Close'].ewm(span=fast_period, adjust=False).mean()
+    slow_ema = data['Close'].ewm(span=slow_period, adjust=False).mean()
+    macd_line = fast_ema - slow_ema
+    signal_line = macd_line.ewm(span=signal_period, adjust=False).mean()
+    macd_histogram = macd_line - signal_line
+    return macd_line, signal_line, macd_histogram
+
 def visualize_macd(df):
     """
     Plot MACD, Signal, and Histogram.
@@ -300,6 +330,26 @@ def calculate_adx(file_path, start_date, end_date, window=14, fillna=False):
 
     # Return required columns
     return data[['Timestamp', 'Open', 'High', 'Low', 'Close', 'ADX']]
+
+def calculation_adx(data, period=14):
+    plus_dm = data['High'].diff()
+    minus_dm = data['Low'].diff()
+
+    plus_dm[plus_dm < 0] = 0
+    minus_dm[minus_dm > 0] = 0
+
+    tr1 = pd.DataFrame(data['High'] - data['Low'])
+    tr2 = pd.DataFrame(abs(data['High'] - data['Close'].shift(1)))
+    tr3 = pd.DataFrame(abs(data['Low'] - data['Close'].shift(1)))
+    tr = pd.concat([tr1, tr2, tr3], axis=1, join='inner').max(axis=1)
+
+    atr = tr.rolling(window=period, min_periods=1).mean()
+    plus_di = 100 * (plus_dm.ewm(alpha=1/period).mean() / atr)
+    minus_di = abs(100 * (minus_dm.ewm(alpha=1/period).mean() / atr))
+    dx = (abs(plus_di - minus_di) / (plus_di + minus_di)) * 100
+    adx = dx.ewm(alpha=1/period).mean()
+
+    return adx
 
 def visualize_adx(data, adx_values):
     # Ensure the data contains the required columns
@@ -414,6 +464,16 @@ def calculate_rsi(start_date, end_date, file_path):
     df['RSI'] = indicator.rsi()
 
     return df
+
+def calculation_rsi(data, window=14):
+    delta = data['Close'].diff(1)
+    gain = delta.where(delta > 0, 0)
+    loss = -delta.where(delta < 0, 0)
+    avg_gain = gain.rolling(window=window, min_periods=1).mean()
+    avg_loss = loss.rolling(window=window, min_periods=1).mean()
+    rs = avg_gain / avg_loss
+    rsi = 100 - (100 / (1 + rs))
+    return rsi
 
 def visualize_rsi(df):
     # Prepare the data for candlestick plot
@@ -661,6 +721,13 @@ def calculate_bollinger_bands(file_path: str, start_date: str, end_date: str) ->
     df['Bollinger_LBAND_IND'] = bb.bollinger_lband_indicator()  # (1 or 0) 1 when closing price is below lower band and viceversa
     
     return df
+
+def calculation_bollinger_bands(data, window=20, num_of_std=2):
+    rolling_mean = data['Close'].rolling(window).mean()
+    rolling_std = data['Close'].rolling(window).std()
+    upper_band = rolling_mean + (rolling_std * num_of_std)
+    lower_band = rolling_mean - (rolling_std * num_of_std)
+    return upper_band, lower_band
 
 def visualize_bollinger_bands(data):
     # Prepare the data for candlestick plot

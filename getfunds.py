@@ -2,6 +2,7 @@ import requests
 import http.client
 import certifi
 from headers import headers
+import json
 
 def myfunds():
     # Specify the path to the CA certificates file
@@ -20,4 +21,7 @@ def myfunds():
 
     res = conn.getresponse()
     data = res.read()
+    funds_str = data.decode('utf-8')  # Decode bytes to string
+    funds_dict = json.loads(funds_str)  # Parse JSON string to dictionary
     print(data.decode("utf-8"))
+    return funds_dict
