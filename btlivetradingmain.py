@@ -17,6 +17,19 @@ import csv
 import logging
 from typing import Dict, Any, List, Union
 
+from dotenv import load_dotenv
+import os
+
+# Load environment variables from .env file
+load_dotenv()
+
+# Access the variables
+api_key = os.getenv('API_KEY')
+pwd = os.getenv('PWD')
+username = os.getenv('USERNAME')
+token = os.getenv('TOKEN')
+email_pass = os.getenv('EMAIL_PASS')
+
 # Set up logging configuration at the beginning of your file
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 # Set up logging
@@ -34,7 +47,7 @@ def is_business_day(now):
     return True
 
 # Function to login
-def my_login(api_key: str, username: str, pwd: str) -> tuple:
+def my_login(api_key: str, username: str, pwd: str,token: str) -> tuple:
     """
     Login to the API and return headers and message.
 
@@ -47,7 +60,7 @@ def my_login(api_key: str, username: str, pwd: str) -> tuple:
     - tuple: Headers and message.
     """
     smartApi = SmartConnect(api_key)
-    token = "TCLINC5Z7VAZCVKJ4Y2FYRIVPE"  # Ensure this is correct and valid
+    token = token  # Ensure this is correct and valid
 
     try:
         totp = pyotp.TOTP(token).now()
@@ -311,7 +324,7 @@ def send_email(message):
     try:
         with smtplib.SMTP('smtp.gmail.com', 587) as smtp:
             smtp.starttls()
-            smtp.login(sender_email, 'yeis gzqw gaes frjp')  # Use an app password or environment variable for security
+            smtp.login(sender_email, email_pass)  # email_pass is an environment secret variable
             smtp.send_message(msg)
         logging.info("Email sent successfully!")
     except Exception as e:
@@ -566,7 +579,7 @@ def main():
         msg = None
 
         for attempt in range(max_retries):
-            headers, msg = my_login(logincred.api_key, logincred.username, logincred.pwd)
+            headers, msg = my_login(api_key, username, pwd, token) # api_key, username, pwd, token are all environment secret variable
 
             if msg == 'SUCCESS':
                 logging.info("Login successful.")
