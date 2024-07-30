@@ -15,6 +15,12 @@ from email.message import EmailMessage
 import time
 import csv
 import logging
+from typing import Dict, Any, List, Union
+
+# Set up logging configuration at the beginning of your file
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+# Set up logging
+logger = logging.getLogger(__name__)
 
 # Function to check if today is a business day
 def is_business_day(now):
@@ -28,7 +34,18 @@ def is_business_day(now):
     return True
 
 # Function to login
-def my_login(api_key, username, pwd):
+def my_login(api_key: str, username: str, pwd: str) -> tuple:
+    """
+    Login to the API and return headers and message.
+
+    Parameters:
+    - api_key (str): API key for authentication.
+    - username (str): Username for login.
+    - pwd (str): Password for login.
+
+    Returns:
+    - tuple: Headers and message.
+    """
     smartApi = SmartConnect(api_key)
     token = "TCLINC5Z7VAZCVKJ4Y2FYRIVPE"  # Ensure this is correct and valid
 
@@ -38,7 +55,11 @@ def my_login(api_key, username, pwd):
         logger.error("Invalid Token: The provided token is not valid.")
         raise e
 
-    data = smartApi.generateSession(username, pwd, totp)
+    try:
+        data = smartApi.generateSession(username, pwd, totp)
+    except Exception as e:
+        logger.error(f"Error generating session: {e}")
+        return None, None
 
     if not data['status']:
         logger.error(data)
@@ -59,31 +80,35 @@ def my_login(api_key, username, pwd):
             'X-ClientLocalIP': '192.168.0.105',
             'X-ClientPublicIP': '192.168.0.105',
             'X-MACAddress': '50-C2-E8-8F-5A-85',
-            'X-PrivateKey': '2D95hkAA'
+            'X-PrivateKey': api_key  # Include api_key dynamically in the header
         }
     return headers, msg
 
 # Function to fetch funds
 def myfunds(headers):
-    # Specify the path to the CA certificates file
-    ca_file = certifi.where()
+    try:
+        # Specify the path to the CA certificates file
+        ca_file = certifi.where()
 
-    # Create an HTTPSConnection with the specified CA certificates file
-    conn = http.client.HTTPSConnection(
-        'apiconnect.angelbroking.com',
-        context=http.client.ssl._create_default_https_context(cafile=ca_file)
-    )
+        # Create an HTTPSConnection with the specified CA certificates file
+        conn = http.client.HTTPSConnection(
+            'apiconnect.angelbroking.com',
+            context=http.client.ssl.create_default_context(cafile=ca_file)
+        )
 
-    url = '/rest/secure/angelbroking/user/v1/getRMS'
+        url = '/rest/secure/angelbroking/user/v1/getRMS'
 
-    conn.request("GET", url, headers=headers)
+        conn.request("GET", url, headers=headers)
 
-    res = conn.getresponse()
-    data = res.read()
-    funds_str = data.decode('utf-8')  # Decode bytes to string
-    funds_dict = json.loads(funds_str)  # Parse JSON string to dictionary
-    return 15000#funds_dict
-
+        res = conn.getresponse()
+        data = res.read()
+        funds_str = data.decode('utf-8')  # Decode bytes to string
+        funds_dict = json.loads(funds_str)  # Parse JSON string to dictionary
+        return 15000#funds_dict
+    except Exception as e:
+        logger.error(f"An error occured: {e}")
+        return None
+    
 # Function to access historical data  
 def myhistory(headers, exchange, symbol_token, interval, start_date, end_date):
     """
@@ -132,27 +157,68 @@ def myhistory(headers, exchange, symbol_token, interval, start_date, end_date):
 
             return formatted_data
         else:
-            print("No data returned from API")
+            logger.error("No data returned from API")
             return pd.DataFrame()  # Return an empty DataFrame if no data
 
     except requests.exceptions.RequestException as e:
-        print(f"Error fetching Angel Broking data: {e}")
+        logger.error(f"Error fetching Angel Broking data: {e}")
         return pd.DataFrame()  # Return an empty DataFrame on error
 
 # Function to check if to invest or not
 def invest(available_cash):
+    """
+    Check if the available cash is sufficient for investing.
+
+    Parameters:
+    - available_cash (float or int): The amount of available cash.
+
+    Returns:
+    - bool: True if available_cash is greater than or equal to 10,000, otherwise False.
+    """
+    if not isinstance(available_cash, (int, float)):
+        raise ValueError("available_cash must be an integer or float")
+    
     return available_cash >= 10000
 
 # Calculate DEMA
-def calculate_dema(data, period):
+def calculate_dema(data: pd.DataFrame, period: int) -> pd.Series:
+    """
+    Calculate the Double Exponential Moving Average (DEMA) of the 'Close' prices.
+
+    Parameters:
+    - data (pd.DataFrame): DataFrame containing 'Close' prices.
+    - period (int): The period for calculating the EMA.
+
+    Returns:
+    - pd.Series: Series containing the DEMA values.
+    """
+    if not isinstance(data, pd.DataFrame):
+        raise ValueError("data must be a pandas DataFrame")
+    
+    if 'Close' not in data.columns:
+        raise ValueError("DataFrame must contain a 'Close' column")
+    
     ema = data['Close'].ewm(span=period, adjust=False).mean()
     dema = 2 * ema - ema.ewm(span=period, adjust=False).mean()
+    
     return dema
 
 # Function to calculate brokerage
-def calculate_brokerage(headers, transaction_type, quantity, price, symbol_name, token):
+def calculate_brokerage(headers: Dict[str, str], transaction_type: str, quantity: int, price: float, 
+                        symbol_name: str, token: str) -> float:
     """
     Calculate brokerage charges based on the provided parameters.
+
+    Parameters:
+    - headers (Dict[str, str]): HTTP headers including authentication tokens.
+    - transaction_type (str): Type of transaction (e.g., "BUY" or "SELL").
+    - quantity (int): Quantity of the stock to be traded.
+    - price (float): Price per unit of the stock.
+    - symbol_name (str): Name of the stock symbol.
+    - token (str): Token for the stock symbol.
+
+    Returns:
+    - float: Estimated total brokerage charges. Returns float('inf') in case of errors.
     """
     url = "https://apiconnect.angelbroking.com/rest/secure/angelbroking/brokerage/v1/estimateCharges"
     data = {
@@ -170,33 +236,47 @@ def calculate_brokerage(headers, transaction_type, quantity, price, symbol_name,
     }
     try:
         response = requests.post(url, headers=headers, data=json.dumps(data))
-        response.raise_for_status()
+        response.raise_for_status()  # Raise HTTPError for bad responses
+
         result = response.json()
         if result.get("status"):
             total_charges = result.get("data", {}).get("summary", {}).get("total_charges", 0)
             return float(total_charges)  # Ensure this is a float for comparison
         else:
-            print(f"API response error: {result.get('message', 'Unknown error')}")
+            message = result.get('message', 'Unknown error')
+            logger.error(f"API response error: {message}")
             return float('inf')  # Return a large number to indicate failure
     except requests.RequestException as e:
-        print(f"Request failed: {e}")
+        logger.error(f"Request failed: {e}")
         return float('inf')  # Return a large number to indicate failure
-
+    
 # Function to send Mail to recipients/Traders
 def send_email(message):
-    """Send an email with a table containing the data."""
+    """
+    Send an email with a table containing the data.
+
+    Parameters:
+    - message (List[Union[str, List[str]]]): The data to be included in the table. 
+      The first item in the list determines the action ('BUY' or 'SELL'), and the rest are table rows.
+    """
+    # Create email message object
+    # Log the received message
+    # logging.info(f"Received message to send: {message}")
+    
     msg = EmailMessage()
     
-    if message[0] == 'BUY':
-        t_headers = ["Action","Quantity","Stock","Stock Token","Date","Buy Price","Stop Loss"]
+    # Determine table headers based on the action
+    action = message[0][0] 
+    if action == 'BUY':
+        t_headers = ["Action", "Quantity", "Stock", "Stock Token", "Date", "Buy Price", "Stop Loss"]
     else:
-        t_headers = ["Action","Quantity","Stock","Stock Token","Date","Sell Price","Stop Loss"]
+        t_headers = ["Action", "Quantity", "Stock", "Stock Token", "Date", "Sell Price", "Stop Loss"]
 
     # Construct the HTML content for the table
     table_headers = ''.join([f"<th style='padding: 7px;'>{header}</th>" for header in t_headers])
     table_rows = ''.join([
         '<tr>' + ''.join([f"<td style='padding: 7px;'>{cell}</td>" for cell in row]) + '</tr>'
-        for row in message
+        for row in message  # Skip the first item if it's the action
     ])
     
     html_content = f"""
@@ -212,7 +292,7 @@ def send_email(message):
                     </tbody>
                 </table>
                 <p></p>
-                <p style="color:red">Note: This is a system generated email</p> # Do your analysis before investing
+                <p style="color:red">Note: This is a system-generated email. Do your analysis before investing.</p>
             </div>
         </body>
     </html>
@@ -231,38 +311,81 @@ def send_email(message):
     try:
         with smtplib.SMTP('smtp.gmail.com', 587) as smtp:
             smtp.starttls()
-            smtp.login(sender_email,'yeis gzqw gaes frjp')
+            smtp.login(sender_email, 'yeis gzqw gaes frjp')  # Use an app password or environment variable for security
             smtp.send_message(msg)
-        print("Email sent successfully!")
+        logging.info("Email sent successfully!")
     except Exception as e:
-        print(f"Failed to send email. Error: {str(e)}")
+        logging.error(f"Failed to send email. Error: {str(e)}")
 
 # Function to save details in csv file
-def save_in_csv(message):
-    # Open a file in append mode
-    with open('investment.csv', 'a', newline='') as file:
-        writer = csv.writer(file)
-        writer.writerows(message)
+def save_in_csv(data: List[List[Union[str, int, float]]], file_name: str = 'investment.csv') -> None:
+    """
+    Save details into a CSV file.
+
+    Parameters:
+    - data (List[List[Union[str, int, float]]]): Data to be written to the CSV file.
+    - file_name (str): The name of the CSV file. Defaults to 'investment.csv'.
+    """
+    try:
+        # Open the file in append mode
+        with open(file_name, 'a', newline='') as file:
+            writer = csv.writer(file)
+            writer.writerows(data)
+        logging.info(f"Data successfully saved to {file_name}.")
+    except Exception as e:
+        logging.error(f"Error saving data to CSV: {e}")
 
 # Function to check buy condition
 def to_invest(historical_data):
+    """
+    Determine if an investment should be made based on historical data.
+
+    Parameters:
+    - historical_data (pd.DataFrame): DataFrame containing historical market data with columns
+      ['Volume', 'Close', 'High', 'Open'].
+
+    Returns:
+    - bool: True if investment criteria are met, False otherwise.
+    """
     today = historical_data.iloc[-1]
     previous = historical_data.iloc[-2]
 
-    if today['Volume'] / previous['Volume'] >= 4 and \
-       (today['Close'] - previous['Close']) / previous['Close'] * 100 >= 4 and \
-       today['High'] > previous['High'] and \
-       calculate_dema(historical_data, 5).iloc[-1] > calculate_dema(historical_data, 8).iloc[-1] > calculate_dema(historical_data, 13).iloc[-1] and \
-       today['Close'] > today['Open']:
+    # Calculate DEMA for periods 5, 8, and 13
+    dema_5 = calculate_dema(historical_data, 5)
+    dema_8 = calculate_dema(historical_data, 8)
+    dema_13 = calculate_dema(historical_data, 13)
+
+    # Check if the conditions are met
+    if (today['Volume'] / previous['Volume'] >= 4 and
+        (today['Close'] - previous['Close']) / previous['Close'] * 100 >= 4 and
+        today['High'] > previous['High'] and
+        dema_5.iloc[-1] > dema_8.iloc[-1] > dema_13.iloc[-1] and
+        today['Close'] > today['Open']):
         return True
     return False
 
 # Function to check if there are investment opportunities and if there then buy it
 def checkforinvestmentopportunities( headers, companiesdict, available_cash, start_date, end_date):
 
+    """
+    Check for investment opportunities based on historical data and available cash.
+
+    Parameters:
+    - headers (dict): HTTP headers for API requests.
+    - companiesdict (Dict[str, str]): Dictionary with company symbols and their tokens.
+    - available_cash (float): Amount of cash available for investment.
+    - start_date (str): Start date for historical data in format '%Y-%m-%d'.
+    - end_date (str): End date for historical data in format '%Y-%m-%d'.
+    """
+    
     investment = []
     
     for i, (symbol, token) in enumerate(companiesdict.items(), start=1):
+        
+        if available_cash < 10000:
+            logging.info("Available cash is below the threshold. Exiting.")
+            break
+
         try:
             historical_data = myhistory(headers, "NSE", token, "ONE_DAY", start_date, end_date)
             if historical_data.empty:
@@ -272,18 +395,19 @@ def checkforinvestmentopportunities( headers, companiesdict, available_cash, sta
                 today = historical_data.iloc[-1]
                 # calculating no of shares that can be buyed
                 max_shares = math.floor(available_cash / today['Close'])
-                print(max_shares)
+                logging.info(f"Max shares for {symbol}: {max_shares}")
+                
                 available_cash -= today["Close"] * max_shares
                 transaction_type = "BUY"
                 calc_brokerage = calculate_brokerage(headers, transaction_type, max_shares, today['Close'], symbol, token)
                 if calc_brokerage > available_cash:
                     max_shares -= 1
-                    print(max_shares)
+                    logging.info(f"Adjusted max shares for {symbol}: {max_shares}")
                 if max_shares > 0:
                     sl = today['Close'] - (today['Close'] * 0.03)
                     investment_details = ["BUY", max_shares, symbol, token, today['Timestamp'].strftime('%Y-%m-%d'),today["Close"], sl]
                     investment.append(investment_details)
-                    break
+                    available_cash = myfunds(headers)
         except Exception as e:
             logging.error(f"Error processing {symbol}: {e}")
 
@@ -296,7 +420,16 @@ def checkforinvestmentopportunities( headers, companiesdict, available_cash, sta
 
 # Function to check if there are selling opportunities in the invested stocks and if there then sell it
 def checkforsellingopportunities( headers, companiesdict, available_cash, start_date, end_date):
-    
+    """
+    Check for selling opportunities based on historical data and existing investments.
+
+    Parameters:
+    - headers (dict): HTTP headers for API requests.
+    - companiesdict (Dict[str, str]): Dictionary with company symbols and their tokens.
+    - available_cash (float): Amount of cash available for investment.
+    - start_date (str): Start date for historical data in format '%Y-%m-%d'.
+    - end_date (str): End date for historical data in format '%Y-%m-%d'.
+    """
     # Read the CSV file into a DataFrame
     csv_file_path = "investment.csv"
     df = pd.read_csv(csv_file_path, header=None)
@@ -316,7 +449,7 @@ def checkforsellingopportunities( headers, companiesdict, available_cash, start_
     try:
         end_date = dt.datetime.strptime(end_date, '%Y-%m-%d %H:%M')
     except ValueError as e:
-        print(f"Error parsing end_date: {e}")
+        logging.error(f"Error parsing end_date: {e}")
         return
     
     # Calculate start_date as 30 days before the end_date
@@ -324,8 +457,7 @@ def checkforsellingopportunities( headers, companiesdict, available_cash, start_
     # Format dates as strings if needed for API or database queries
     end_date = end_date.strftime('%Y-%m-%d %H:%M')
     start_date = start_date.strftime('%Y-%m-%d %H:%M')
-    print("Start Date:", start_date)
-    print("End Date:", end_date)
+    logging.info(f"Start Date: {start_date}, End Date: {end_date}")
 
 
     # Define variables to store updated data
@@ -340,6 +472,14 @@ def checkforsellingopportunities( headers, companiesdict, available_cash, start_
 
     # Iterate over each row in the DataFrame
     for index, row in df.iterrows():
+        try:
+            buy_date = row["date"]
+        except ValueError:
+            logging.warning(f"Invalid date format for row index {index}")
+            continue
+        if end_date[:10] == buy_date:
+            print(index)
+            continue
         stock = row['stock']
         stock_token = row['stock_token']
         historical_data = myhistory(headers, "NSE", stock_token, "ONE_DAY", start_date, end_date)
@@ -348,8 +488,7 @@ def checkforsellingopportunities( headers, companiesdict, available_cash, start_
         if historical_data.empty:
             continue
         
-        today = historical_data.iloc[-1]
-        today = today.copy()
+        today = historical_data.iloc[-1].copy()
         today['DEMA_5'] = calculate_dema(historical_data, 5).iloc[-1]
         today['DEMA_8'] = calculate_dema(historical_data, 8).iloc[-1]
         today['DEMA_13'] = calculate_dema(historical_data, 13).iloc[-1]
@@ -395,17 +534,17 @@ def checkforsellingopportunities( headers, companiesdict, available_cash, start_
             email_msg.append(('DEMA Condition (Sell)',row['quantity'],row['stock'],row['stock_token'],end_date,sell_price,'-'))
             rows_to_delete.append(index)  # Mark for deletion
 
-        elif today["Timestamp"].date() == max_holding_date.date(): #time.time >= 15:15 and
+        elif today["Timestamp"].date() >= max_holding_date.date(): #time.time >= 15:15 and
             # Sell on the max holding period
             sell_price = today['Close']
             updated_rows.append((index, 'Max Holding Period', sell_price))
             email_msg.append(('Max Holding Period',row['quantity'],row['stock'],row['stock_token'],end_date,sell_price,'-'))
             rows_to_delete.append(index)  # Mark for deletion
         
-        # Update rows in DataFrame
-        for index, new_action, new_sl in updated_rows:
-            df.loc[index, 'action'] = new_action
-            df.loc[index, 'sl'] = new_sl
+    # Update rows in DataFrame
+    for index, new_action, new_sl in updated_rows:
+        df.loc[index, 'action'] = new_action
+        df.loc[index, 'sl'] = new_sl
 
     if updated_rows or email_msg:
         send_email(email_msg)
@@ -416,13 +555,27 @@ def checkforsellingopportunities( headers, companiesdict, available_cash, start_
     df.to_csv(csv_file_path, index=False,header=False)
 
 def main():
-    # Check if yesterday was a business day and then fetch funds
-    now = dt.datetime.now() - dt.timedelta(days=15)
+    # Check if today is a business day and then fetch funds
+    now = dt.datetime.now()
     
     if is_business_day(now):
-        # Execute the login function and retrieve headers
-        headers, msg = my_login(logincred.api_key, logincred.username, logincred.pwd)
+        # Retry login with delay if needed
+        max_retries = 2
+        retry_delay = 1
+        headers = None
+        msg = None
 
+        for attempt in range(max_retries):
+            headers, msg = my_login(logincred.api_key, logincred.username, logincred.pwd)
+
+            if msg == 'SUCCESS':
+                logging.info("Login successful.")
+                break
+            else:
+                logging.error(f"Login attempt {attempt + 1} failed: {msg}")
+                if attempt < max_retries - 1:
+                    logging.info(f"Retrying in {retry_delay} second(s)...")
+                    time.sleep(retry_delay)
         if msg == 'SUCCESS':
             # funds = myfunds(headers)
             # available_cash = funds.get('availablecash', 0)
@@ -581,28 +734,27 @@ def main():
             "YESBANK": 11915,
         }
 
-        # start_date = (dt.datetime.now().replace(hour=9, minute=15) - dt.timedelta(days=30)).strftime('%Y-%m-%d %H:%M')
-        # end_date = dt.datetime.now().replace(hour=15, minute=30).strftime('%Y-%m-%d %H:%M')
+        start_date = (dt.datetime.now().replace(hour=9, minute=15) - dt.timedelta(days=30)).strftime('%Y-%m-%d %H:%M')
+        end_date = dt.datetime.now().replace(hour=15, minute=30).strftime('%Y-%m-%d %H:%M')
         # end_date = (dt.datetime.now() - dt.timedelta(days=15)).strftime('%Y-%m-%d %H:%M')
 
-        # Manually specify the end_date
-        end_date_str = '2024-07-24 15:30'  # Example end date
-        end_date = dt.datetime.strptime(end_date_str, '%Y-%m-%d %H:%M')
-        # Calculate the start_date as 30 days before the end_date
-        start_date = end_date - dt.timedelta(days=30)
+        # # Manually specify the end_date
+        # end_date_str = '2024-07-24 15:30'  # Example end date
+        # end_date = dt.datetime.strptime(end_date_str, '%Y-%m-%d %H:%M')
+        # # Calculate the start_date as 30 days before the end_date
+        # start_date = end_date - dt.timedelta(days=30)
         # Format both dates as strings
-        start_date = start_date.strftime('%Y-%m-%d %H:%M')
-        end_date = end_date.strftime('%Y-%m-%d %H:%M')
+        # start_date = start_date.strftime('%Y-%m-%d %H:%M')
+        # end_date = end_date.strftime('%Y-%m-%d %H:%M')
 
-        if invest(available_cash):
-            checkforinvestmentopportunities( headers, companiesdict, available_cash, start_date, end_date)
-        else:
-            checkforsellingopportunities( headers, companiesdict, available_cash, start_date, end_date)
-
+        # if invest(available_cash):
+        #     checkforinvestmentopportunities( headers, companiesdict, available_cash, start_date, end_date)
+        # else:
+        #     checkforsellingopportunities( headers, companiesdict, available_cash, start_date, end_date)
+        
+        checkforinvestmentopportunities( headers, companiesdict, available_cash, start_date, end_date)
+        checkforsellingopportunities( headers, companiesdict, available_cash, start_date, end_date)
+        
 if __name__ == '__main__':
     main()
-
-
-
-
 
