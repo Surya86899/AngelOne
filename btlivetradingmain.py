@@ -38,13 +38,23 @@ logger = logging.getLogger(__name__)
 # Function to check if today is a business day
 def is_business_day(now):
     today = now.date()
-    holidays_df = nselib.trading_holiday_calendar()  # Assuming this returns a DataFrame
-    holidays_df['tradingDate'] = pd.to_datetime(holidays_df['tradingDate'], format='%d-%b-%Y').dt.date
-    holidays = holidays_df['tradingDate'].values  # Convert to array of datetime.date objects
+    holidays_df = nselib.trading_holiday_calendar()  # Get the DataFrame from nselib
 
+    # Debug: Print the first few rows of the DataFrame
+    print("Sample DataFrame:")
+    print(holidays_df.head())
+
+    # Ensure the 'tradingDate' column is of type datetime.date
+    holidays_df['tradingDate'] = pd.to_datetime(holidays_df['tradingDate'], format='%d-%b-%Y').dt.date
+
+    # Convert to list of datetime.date objects
+    holidays = holidays_df['tradingDate'].tolist()  # Convert to list for faster lookup
+
+    # Check if today is a weekend or a holiday
     if today.weekday() >= 5 or today in holidays:
         return False
     return True
+
 
 # Function to login
 def my_login(api_key: str, username: str, pwd: str,token: str) -> tuple:
