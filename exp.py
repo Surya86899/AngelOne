@@ -113,9 +113,96 @@
 #     print("Invalid end_date provided. Processing aborted.")
 
 
-import pandas as pd 
+# import pandas as pd 
 
-purchase_date = "2021-11-17"
+# purchase_date = "2021-11-17"
 
-bdate_range = pd.bdate_range(start=purchase_date, periods=24)  # Get the next 24 business days
-print(bdate_range)
+# bdate_range = pd.bdate_range(start=purchase_date, periods=24)  # Get the next 24 business days
+# print(bdate_range)
+
+import nselib
+import pandas as pd
+import datetime as dt
+import logging
+import pyotp
+from SmartApi import SmartConnect
+import logincred
+import certifi
+import http
+import json
+
+# def my_login(api_key, username, pwd):
+#     smartApi = SmartConnect(api_key)
+#     token = "TCLINC5Z7VAZCVKJ4Y2FYRIVPE"  # Ensure this is correct and valid
+
+#     try:
+#         totp = pyotp.TOTP(token).now()
+#     except Exception as e:
+#         logger.error("Invalid Token: The provided token is not valid.")
+#         raise e
+
+#     try:
+#         data = smartApi.generateSession(username, pwd, totp)
+#     except Exception as e:
+#         logger.error(f"Error generating session: {e}")
+#         return None, None
+
+#     if not data['status']:
+#         logger.error(data)
+#         return data, None, None
+#     else:
+#         # login api call
+#         # logger.info(f"Your Credentials: {data}")
+#         authToken = data['data']['jwtToken']
+#         msg = data['message']
+
+#         # Update the Authorization header with the received JWT token
+#         headers = {
+#             'Authorization': f'{authToken}',
+#             'Content-Type': 'application/json',
+#             'Accept': 'application/json',
+#             'X-UserType': 'USER',
+#             'X-SourceID': 'WEB',
+#             'X-ClientLocalIP': '192.168.0.105',
+#             'X-ClientPublicIP': '192.168.0.105',
+#             'X-MACAddress': '50-C2-E8-8F-5A-85',
+#             'X-PrivateKey': api_key  # Include api_key dynamically in the header
+#         }
+#     return headers, msg
+
+# def myfunds(headers):
+#     try:
+#         # Specify the path to the CA certificates file
+#         ca_file = certifi.where()
+
+#         # Create an HTTPSConnection with the specified CA certificates file
+#         conn = http.client.HTTPSConnection(
+#             'apiconnect.angelbroking.com',
+#             context=http.client.ssl.create_default_context(cafile=ca_file)
+#         )
+
+#         url = '/rest/secure/angelbroking/user/v1/getRMS'
+
+#         conn.request("GET", url, headers=headers)
+
+#         res = conn.getresponse()
+#         data = res.read()
+#         funds_str = data.decode('utf-8')  # Decode bytes to string
+#         funds_dict = json.loads(funds_str)  # Parse JSON string to dictionary
+#         return funds_dict
+#         # return 15000#funds_dict
+#     except Exception as e:
+#         print(f"An error occured: {e}")
+#         return None
+    
+# now = dt.datetime.now()
+# headers, msg = my_login(logincred.api_key,logincred.username,logincred.pwd)
+# funds = myfunds(headers)
+
+# print(funds['data']['availablecash'])
+# Set up logging configuration at the beginning of your file
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+# Set up logging
+logger = logging.getLogger(__name__)
+
+logger.error('Hello')
