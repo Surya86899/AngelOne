@@ -1,4 +1,4 @@
-# Volume backtesting code with brokerage Calculator 
+# Volume backtesting code with brokerage Calculator experimentation
 
 import pandas as pd
 import numpy as np
@@ -59,7 +59,7 @@ def backtest_trading_strategy(data_list, initial_capital, max_holding_period):
     invested = False
     invested_company = None
     buy_date = None
-    start = '2014-01-01T00:00:00+05:30'
+    start = '2021-01-01T00:00:00+05:30'
     end = '2024-07-30T00:00:00+05:30'
 
     current_start_date = pd.Timestamp(start)
@@ -278,7 +278,7 @@ file_paths = [
 
     r"C:\Documents\GitHub\AngelOne\historical files\ABB-EQ_ONE_DAY_candle_data.csv",  #50
     r"C:\Documents\GitHub\AngelOne\historical files\ADANIENSOL-EQ_ONE_DAY_candle_data.csv",  #51
-    # r"C:\Documents\GitHub\AngelOne\historical files\ADANIGREEN-EQ_ONE_DAY_candle_data.csv",  #52
+    r"C:\Documents\GitHub\AngelOne\historical files\ADANIGREEN-EQ_ONE_DAY_candle_data.csv",  #52
     r"C:\Documents\GitHub\AngelOne\historical files\ADANIPOWER-EQ_ONE_DAY_candle_data.csv",  #53
     r"C:\Documents\GitHub\AngelOne\historical files\ATGL-EQ_ONE_DAY_candle_data.csv",  #54
     r"C:\Documents\GitHub\AngelOne\historical files\AMBUJACEM-EQ_ONE_DAY_candle_data.csv",  #55
@@ -327,56 +327,56 @@ file_paths = [
     r"C:\Documents\GitHub\AngelOne\historical files\ZOMATO-EQ_ONE_DAY_candle_data.csv",  #98
     r"C:\Documents\GitHub\AngelOne\historical files\ZYDUSLIFE-EQ_ONE_DAY_candle_data.csv",  #99
 
-    r"C:\Documents\GitHub\AngelOne\historical files\ACC-EQ_ONE_DAY_candle_data.csv",  #100
-    r"C:\Documents\GitHub\AngelOne\historical files\AUBANK-EQ_ONE_DAY_candle_data.csv",  #101
-    r"C:\Documents\GitHub\AngelOne\historical files\ABCAPITAL-EQ_ONE_DAY_candle_data.csv",  #102
-    r"C:\Documents\GitHub\AngelOne\historical files\ALKEM-EQ_ONE_DAY_candle_data.csv",  #103
-    r"C:\Documents\GitHub\AngelOne\historical files\ASHOKLEY-EQ_ONE_DAY_candle_data.csv",  #104
-    r"C:\Documents\GitHub\AngelOne\historical files\ASTRAL-EQ_ONE_DAY_candle_data.csv",  #105
-    r"C:\Documents\GitHub\AngelOne\historical files\AUROPHARMA-EQ_ONE_DAY_candle_data.csv",  #106
-    r"C:\Documents\GitHub\AngelOne\historical files\BALKRISIND-EQ_ONE_DAY_candle_data.csv",  #107
-    r"C:\Documents\GitHub\AngelOne\historical files\BANDHANBNK-EQ_ONE_DAY_candle_data.csv",  #108
-    r"C:\Documents\GitHub\AngelOne\historical files\BHARATFORG-EQ_ONE_DAY_candle_data.csv",  #109
-    r"C:\Documents\GitHub\AngelOne\historical files\BHEL-EQ_ONE_DAY_candle_data.csv",  #110
-    r"C:\Documents\GitHub\AngelOne\historical files\COFORGE-EQ_ONE_DAY_candle_data.csv",  #111
-    r"C:\Documents\GitHub\AngelOne\historical files\CONCOR-EQ_ONE_DAY_candle_data.csv",  #112
-    r"C:\Documents\GitHub\AngelOne\historical files\CUMMINSIND-EQ_ONE_DAY_candle_data.csv",  #113
-    r"C:\Documents\GitHub\AngelOne\historical files\DALBHARAT-EQ_ONE_DAY_candle_data.csv",  #114
-    r"C:\Documents\GitHub\AngelOne\historical files\DIXON-EQ_ONE_DAY_candle_data.csv",  #115
-    r"C:\Documents\GitHub\AngelOne\historical files\ESCORTS-EQ_ONE_DAY_candle_data.csv",  #116
-    r"C:\Documents\GitHub\AngelOne\historical files\FEDERALBNK-EQ_ONE_DAY_candle_data.csv",  #117
-    r"C:\Documents\GitHub\AngelOne\historical files\GMRINFRA-EQ_ONE_DAY_candle_data.csv",  #118
-    r"C:\Documents\GitHub\AngelOne\historical files\GODREJPROP-EQ_ONE_DAY_candle_data.csv",  #119
-    r"C:\Documents\GitHub\AngelOne\historical files\GUJGASLTD-EQ_ONE_DAY_candle_data.csv",  #120
-    r"C:\Documents\GitHub\AngelOne\historical files\HDFCAMC-EQ_ONE_DAY_candle_data.csv",  #121
-    r"C:\Documents\GitHub\AngelOne\historical files\HINDPETRO-EQ_ONE_DAY_candle_data.csv",  #122
-    r"C:\Documents\GitHub\AngelOne\historical files\IDFCFIRSTB-EQ_ONE_DAY_candle_data.csv",  #123
-    r"C:\Documents\GitHub\AngelOne\historical files\INDHOTEL-EQ_ONE_DAY_candle_data.csv",  #124
-    r"C:\Documents\GitHub\AngelOne\historical files\INDUSTOWER-EQ_ONE_DAY_candle_data.csv",  #125
-    r"C:\Documents\GitHub\AngelOne\historical files\JUBLFOOD-EQ_ONE_DAY_candle_data.csv",  #126
-    # r"C:\Documents\GitHub\AngelOne\historical files\LTF-BL_ONE_DAY_candle_data.csv",  #127
-    r"C:\Documents\GitHub\AngelOne\historical files\LTTS-EQ_ONE_DAY_candle_data.csv",  #128
-    r"C:\Documents\GitHub\AngelOne\historical files\LUPIN-EQ_ONE_DAY_candle_data.csv",  #129
-    r"C:\Documents\GitHub\AngelOne\historical files\MRF-EQ_ONE_DAY_candle_data.csv",  #130
-    r"C:\Documents\GitHub\AngelOne\historical files\M&MFIN-EQ_ONE_DAY_candle_data.csv",  #131
-    r"C:\Documents\GitHub\AngelOne\historical files\MFSL-EQ_ONE_DAY_candle_data.csv",  #132
-    r"C:\Documents\GitHub\AngelOne\historical files\MAXHEALTH-EQ_ONE_DAY_candle_data.csv",  #133
-    r"C:\Documents\GitHub\AngelOne\historical files\MPHASIS-EQ_ONE_DAY_candle_data.csv",  #134
-    r"C:\Documents\GitHub\AngelOne\historical files\NMDC-EQ_ONE_DAY_candle_data.csv",  #135
-    r"C:\Documents\GitHub\AngelOne\historical files\OBEROIRLTY-EQ_ONE_DAY_candle_data.csv",  #136
-    r"C:\Documents\GitHub\AngelOne\historical files\OFSS-EQ_ONE_DAY_candle_data.csv",  #137
-    r"C:\Documents\GitHub\AngelOne\historical files\PIIND-EQ_ONE_DAY_candle_data.csv",  #138
-    r"C:\Documents\GitHub\AngelOne\historical files\PAGEIND-EQ_ONE_DAY_candle_data.csv",  #139
-    r"C:\Documents\GitHub\AngelOne\historical files\PERSISTENT-EQ_ONE_DAY_candle_data.csv",  #140
-    r"C:\Documents\GitHub\AngelOne\historical files\PETRONET-EQ_ONE_DAY_candle_data.csv",  #141
-    r"C:\Documents\GitHub\AngelOne\historical files\POLYCAB-EQ_ONE_DAY_candle_data.csv",  #142
-    r"C:\Documents\GitHub\AngelOne\historical files\SAIL-EQ_ONE_DAY_candle_data.csv",  #143
-    r"C:\Documents\GitHub\AngelOne\historical files\SUZLON-EQ_ONE_DAY_candle_data.csv",  #144
-    r"C:\Documents\GitHub\AngelOne\historical files\TATACOMM-EQ_ONE_DAY_candle_data.csv",  #145
-    r"C:\Documents\GitHub\AngelOne\historical files\TIINDIA-EQ_ONE_DAY_candle_data.csv",  #146
-    r"C:\Documents\GitHub\AngelOne\historical files\UPL-EQ_ONE_DAY_candle_data.csv",  #147
-    r"C:\Documents\GitHub\AngelOne\historical files\IDEA-EQ_ONE_DAY_candle_data.csv",  #148
-    r"C:\Documents\GitHub\AngelOne\historical files\YESBANK-EQ_ONE_DAY_candle_data.csv",  #149
+    # r"C:\Documents\GitHub\AngelOne\historical files\ACC-EQ_ONE_DAY_candle_data.csv",  #100
+    # r"C:\Documents\GitHub\AngelOne\historical files\AUBANK-EQ_ONE_DAY_candle_data.csv",  #101
+    # r"C:\Documents\GitHub\AngelOne\historical files\ABCAPITAL-EQ_ONE_DAY_candle_data.csv",  #102
+    # r"C:\Documents\GitHub\AngelOne\historical files\ALKEM-EQ_ONE_DAY_candle_data.csv",  #103
+    # r"C:\Documents\GitHub\AngelOne\historical files\ASHOKLEY-EQ_ONE_DAY_candle_data.csv",  #104
+    # r"C:\Documents\GitHub\AngelOne\historical files\ASTRAL-EQ_ONE_DAY_candle_data.csv",  #105
+    # r"C:\Documents\GitHub\AngelOne\historical files\AUROPHARMA-EQ_ONE_DAY_candle_data.csv",  #106
+    # r"C:\Documents\GitHub\AngelOne\historical files\BALKRISIND-EQ_ONE_DAY_candle_data.csv",  #107
+    # r"C:\Documents\GitHub\AngelOne\historical files\BANDHANBNK-EQ_ONE_DAY_candle_data.csv",  #108
+    # r"C:\Documents\GitHub\AngelOne\historical files\BHARATFORG-EQ_ONE_DAY_candle_data.csv",  #109
+    # r"C:\Documents\GitHub\AngelOne\historical files\BHEL-EQ_ONE_DAY_candle_data.csv",  #110
+    # r"C:\Documents\GitHub\AngelOne\historical files\COFORGE-EQ_ONE_DAY_candle_data.csv",  #111
+    # r"C:\Documents\GitHub\AngelOne\historical files\CONCOR-EQ_ONE_DAY_candle_data.csv",  #112
+    # r"C:\Documents\GitHub\AngelOne\historical files\CUMMINSIND-EQ_ONE_DAY_candle_data.csv",  #113
+    # r"C:\Documents\GitHub\AngelOne\historical files\DALBHARAT-EQ_ONE_DAY_candle_data.csv",  #114
+    # r"C:\Documents\GitHub\AngelOne\historical files\DIXON-EQ_ONE_DAY_candle_data.csv",  #115
+    # r"C:\Documents\GitHub\AngelOne\historical files\ESCORTS-EQ_ONE_DAY_candle_data.csv",  #116
+    # r"C:\Documents\GitHub\AngelOne\historical files\FEDERALBNK-EQ_ONE_DAY_candle_data.csv",  #117
+    # r"C:\Documents\GitHub\AngelOne\historical files\GMRINFRA-EQ_ONE_DAY_candle_data.csv",  #118
+    # r"C:\Documents\GitHub\AngelOne\historical files\GODREJPROP-EQ_ONE_DAY_candle_data.csv",  #119
+    # r"C:\Documents\GitHub\AngelOne\historical files\GUJGASLTD-EQ_ONE_DAY_candle_data.csv",  #120
+    # r"C:\Documents\GitHub\AngelOne\historical files\HDFCAMC-EQ_ONE_DAY_candle_data.csv",  #121
+    # r"C:\Documents\GitHub\AngelOne\historical files\HINDPETRO-EQ_ONE_DAY_candle_data.csv",  #122
+    # r"C:\Documents\GitHub\AngelOne\historical files\IDFCFIRSTB-EQ_ONE_DAY_candle_data.csv",  #123
+    # r"C:\Documents\GitHub\AngelOne\historical files\INDHOTEL-EQ_ONE_DAY_candle_data.csv",  #124
+    # r"C:\Documents\GitHub\AngelOne\historical files\INDUSTOWER-EQ_ONE_DAY_candle_data.csv",  #125
+    # r"C:\Documents\GitHub\AngelOne\historical files\JUBLFOOD-EQ_ONE_DAY_candle_data.csv",  #126
+    # # r"C:\Documents\GitHub\AngelOne\historical files\LTF-BL_ONE_DAY_candle_data.csv",  #127
+    # r"C:\Documents\GitHub\AngelOne\historical files\LTTS-EQ_ONE_DAY_candle_data.csv",  #128
+    # r"C:\Documents\GitHub\AngelOne\historical files\LUPIN-EQ_ONE_DAY_candle_data.csv",  #129
+    # r"C:\Documents\GitHub\AngelOne\historical files\MRF-EQ_ONE_DAY_candle_data.csv",  #130
+    # r"C:\Documents\GitHub\AngelOne\historical files\M&MFIN-EQ_ONE_DAY_candle_data.csv",  #131
+    # r"C:\Documents\GitHub\AngelOne\historical files\MFSL-EQ_ONE_DAY_candle_data.csv",  #132
+    # r"C:\Documents\GitHub\AngelOne\historical files\MAXHEALTH-EQ_ONE_DAY_candle_data.csv",  #133
+    # r"C:\Documents\GitHub\AngelOne\historical files\MPHASIS-EQ_ONE_DAY_candle_data.csv",  #134
+    # r"C:\Documents\GitHub\AngelOne\historical files\NMDC-EQ_ONE_DAY_candle_data.csv",  #135
+    # r"C:\Documents\GitHub\AngelOne\historical files\OBEROIRLTY-EQ_ONE_DAY_candle_data.csv",  #136
+    # r"C:\Documents\GitHub\AngelOne\historical files\OFSS-EQ_ONE_DAY_candle_data.csv",  #137
+    # r"C:\Documents\GitHub\AngelOne\historical files\PIIND-EQ_ONE_DAY_candle_data.csv",  #138
+    # r"C:\Documents\GitHub\AngelOne\historical files\PAGEIND-EQ_ONE_DAY_candle_data.csv",  #139
+    # r"C:\Documents\GitHub\AngelOne\historical files\PERSISTENT-EQ_ONE_DAY_candle_data.csv",  #140
+    # r"C:\Documents\GitHub\AngelOne\historical files\PETRONET-EQ_ONE_DAY_candle_data.csv",  #141
+    # r"C:\Documents\GitHub\AngelOne\historical files\POLYCAB-EQ_ONE_DAY_candle_data.csv",  #142
+    # r"C:\Documents\GitHub\AngelOne\historical files\SAIL-EQ_ONE_DAY_candle_data.csv",  #143
+    # r"C:\Documents\GitHub\AngelOne\historical files\SUZLON-EQ_ONE_DAY_candle_data.csv",  #144
+    # r"C:\Documents\GitHub\AngelOne\historical files\TATACOMM-EQ_ONE_DAY_candle_data.csv",  #145
+    # r"C:\Documents\GitHub\AngelOne\historical files\TIINDIA-EQ_ONE_DAY_candle_data.csv",  #146
+    # r"C:\Documents\GitHub\AngelOne\historical files\UPL-EQ_ONE_DAY_candle_data.csv",  #147
+    # r"C:\Documents\GitHub\AngelOne\historical files\IDEA-EQ_ONE_DAY_candle_data.csv",  #148
+    # r"C:\Documents\GitHub\AngelOne\historical files\YESBANK-EQ_ONE_DAY_candle_data.csv",  #149
 ]
 
 # Load data into a list of DataFrames

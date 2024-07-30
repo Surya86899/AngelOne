@@ -79,7 +79,6 @@ def cancel_normal_order(variety,order_id):
     data = res.read()
     print(data.decode("utf-8"))
 
-
 #  The order book typically contains information about all open orders placed by a user, including details such as order ID, order type, product type, quantity, price, and status.
 def get_normal_orderbook():
 
@@ -90,7 +89,6 @@ def get_normal_orderbook():
     data = res.read()
     print(data.decode("utf-8"))
 
-
 # The trade book contains information about executed trades, including details such as trade ID, order ID, exchange, symbol, transaction type (buy/sell), quantity, price, timestamp, and other relevant information about each trade.
 def get_normal_tradebook():
 
@@ -100,7 +98,6 @@ def get_normal_tradebook():
     res = conn.getresponse()
     data = res.read()
     print(data.decode("utf-8"))
-
 
 # ****************************loss or profit of all trades****************************
 def get_ltp_data(exchange,trading_symbol,symbol_token):

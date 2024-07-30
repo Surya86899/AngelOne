@@ -107,7 +107,6 @@ def modify_gtt_rule(rule_id, trading_symbol, symbol_token, exchange, transaction
     # Print the response
     print(data)
 
-
 # *************************Define function to get GTT rule details*************************
 def get_gtt_rule_details(rule_id):
     # Specify the path to the CA certificates file

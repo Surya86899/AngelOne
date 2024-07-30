@@ -17,7 +17,6 @@ import logout       # Contains my login code
 from headers import headers     # Contains headers
 import getprofile       # Contains my profile code
 import history
-import historydelivery
 import historyAngelandNSE
 import normalorder      # Contains my normal order manipulation code
 
@@ -36,24 +35,24 @@ import normalorder      # Contains my normal order manipulation code
 # **********************************************************
 
 # ************************Historical Candle data****************************
-# File path for the OpenAPIScripMaster.csv
-file_path = 'OpenAPIScripMaster.csv'
-# Name to search for
-name_to_search = 'WIPRO'
+# # File path for the OpenAPIScripMaster.csv
+# file_path = 'OpenAPIScripMaster.csv'
+# # Name to search for
+# name_to_search = 'WIPRO'
 
-# Searching for symbol and token based on the name
-symbol_token,trading_symbol = history.search_symbol_by_name(name_to_search, file_path)
-print (symbol_token,trading_symbol)
+# # Searching for symbol and token based on the name
+# symbol_token,trading_symbol = history.search_symbol_by_name(name_to_search, file_path)
+# print (symbol_token,trading_symbol)
 
-if symbol_token and trading_symbol:
-    print(f"Token: {symbol_token}, Symbol: {trading_symbol}")
-    # Retrieving historical data for the symbol and token
-    for i in range(2020, 2025):  # Adjust the range as per your requirement
-        # history.myhistory("NSE", symbol_token, "ONE_DAY", f"{i}-12-31 09:00", f"{i+1}-12-31 03:30",trading_symbol)
-        # historydelivery.myhistory("NSE", symbol_token, "ONE_DAY", f"{i}-01-01 09:00", f"{i}-12-31 03:30","M&M")
-        historyAngelandNSE.merge_and_save_data(trading_symbol, "NSE", symbol_token, "ONE_DAY", f"{i}-01-01 09:00", f"{i}-12-31 03:30", file_path)
-else:
-    print("Name not found.")
+# if symbol_token and trading_symbol:
+#     print(f"Token: {symbol_token}, Symbol: {trading_symbol}")
+#     # Retrieving historical data for the symbol and token
+#     for i in range(2020, 2025):  # Adjust the range as per your requirement
+#         # history.myhistory("NSE", symbol_token, "ONE_DAY", f"{i}-12-31 09:00", f"{i+1}-12-31 03:30",trading_symbol)
+#         # historydelivery.myhistory("NSE", symbol_token, "ONE_DAY", f"{i}-01-01 09:00", f"{i}-12-31 03:30","M&M")
+#         historyAngelandNSE.merge_and_save_data(trading_symbol, "NSE", symbol_token, "ONE_DAY", f"{i}-01-01 09:00", f"{i}-12-31 03:30", file_path)
+# else:
+#     print("Name not found.")
 
 # ************************Historical Candle data****************************
 

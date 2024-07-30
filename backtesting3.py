@@ -1,4 +1,4 @@
-# Volume backtesting code calculating every trade in a single day
+# Volume backtesting code calculating every trade in a single day with brokerage Calculator 
 
 import pandas as pd
 import numpy as np
@@ -10,6 +10,48 @@ def calculate_dema(data, period):
     dema = 2 * ema - ema.ewm(span=period, adjust=False).mean()
     return dema
 
+def calculate_total_charges(buy_price, buy_quantity, sell_price, sell_quantity):
+    # Charge rates
+    stt_rate_buy = 0.001  # 0.1% STT on buy
+    stt_rate_sell = 0.001  # 0.1% STT on sell
+    transaction_charge_rate = 0.0000335  # 0.00335%
+    dp_charge_per_scrip = 20  # DP charges
+    dp_gst_rate = 0.18  # GST on DP charges
+    stamp_duty_rate = 0.000076  # 0.015%
+    sebi_turnover_fee_rate = 0.000001  # 0.0001%
+    gst_rate = 0.18  # GST on brokerage and transaction charges
+
+    # Ensure the quantities match for buy and sell transactions
+    if buy_quantity != sell_quantity:
+        raise ValueError("Buy and Sell quantities do not match.")
+    
+    buy_value = buy_price * buy_quantity
+    sell_value = sell_price * sell_quantity
+    
+    # STT calculation
+    stt = buy_value * stt_rate_buy + sell_value * stt_rate_sell
+    
+    # Transaction charges
+    transaction_charges = (buy_value + sell_value) * transaction_charge_rate
+    
+    # DP charges on sell side only
+    dp_charges = dp_charge_per_scrip
+    dp_charges_gst = dp_charges * dp_gst_rate
+    
+    # Stamp duty
+    stamp_duty = buy_value * stamp_duty_rate + sell_value * stamp_duty_rate
+    
+    # SEBI turnover fees
+    sebi_turnover_fees = (buy_value + sell_value) * sebi_turnover_fee_rate
+    
+    # GST on transaction charges and DP charges
+    gst = (transaction_charges + dp_charges + sebi_turnover_fees) * gst_rate
+    
+    # Total charges
+    total_charges = stt + transaction_charges + dp_charges + dp_charges_gst + stamp_duty + sebi_turnover_fees + gst
+    
+    return total_charges
+
 def backtest_trading_strategy(data_list, initial_capital, max_holding_period):
     positions = []
     capital = initial_capital
@@ -17,8 +59,8 @@ def backtest_trading_strategy(data_list, initial_capital, max_holding_period):
     invested = False
     invested_company = None
     buy_date = None
-    start = '2023-01-01T00:00:00+05:30'
-    end = '2024-07-03T00:00:00+05:30'
+    start = '2024-01-01T00:00:00+05:30'
+    end = '2024-07-30T00:00:00+05:30'
 
     current_start_date = pd.Timestamp(start)
     end_date = pd.Timestamp(end)
@@ -39,7 +81,9 @@ def backtest_trading_strategy(data_list, initial_capital, max_holding_period):
         if current_start_date not in business_days:
             current_start_date += pd.Timedelta(days=1)
             continue
-
+        
+        sell_occurred = False
+        
         for company_index, data in enumerate(data_list):
             if current_start_date not in data.index:
                 continue
@@ -98,8 +142,10 @@ def backtest_trading_strategy(data_list, initial_capital, max_holding_period):
                             else:
                                 sell_price = positions[-1][2] * 1.04
                                 sell_amount = sell_price * positions[-1][3]
-                                profit += sell_amount - (positions[-1][2] * positions[-1][3])
-                                capital += sell_amount
+                                total_charges = calculate_total_charges(positions[-1][2], positions[-1][3], sell_price, positions[-1][3])
+                                net_sell_amount = sell_amount - total_charges
+                                profit += net_sell_amount - (positions[-1][2] * positions[-1][3])
+                                capital += net_sell_amount
                                 positions.append(('Sell', sell_candidate.name.strftime('%Y-%m-%d'), sell_price, positions[-1][3], capital, company_index))
                                 invested = False
                                 invested_company = None
@@ -109,8 +155,10 @@ def backtest_trading_strategy(data_list, initial_capital, max_holding_period):
                         elif sell_candidate['Low'] <= sl:
                             sell_price = sl
                             sell_amount = sell_price * positions[-1][3]
-                            profit += (sell_amount - positions[-1][2] * positions[-1][3])
-                            capital += sell_amount
+                            total_charges = calculate_total_charges(positions[-1][2], positions[-1][3], sell_price, positions[-1][3])
+                            net_sell_amount = sell_amount - total_charges
+                            profit += (net_sell_amount - positions[-1][2] * positions[-1][3])
+                            capital += net_sell_amount
                             positions.append(('Sell (Updated Stop Loss)', sell_candidate.name.strftime('%Y-%m-%d'), sell_price, positions[-1][3], capital, company_index))
                             invested = False
                             invested_company = None
@@ -120,26 +168,30 @@ def backtest_trading_strategy(data_list, initial_capital, max_holding_period):
                         elif targetnotach and data.at[future_date, 'DEMA_5'] < data.at[future_date, 'DEMA_8']:
                             sell_price = sell_candidate['Close']
                             sell_amount = sell_price * positions[-1][3]
-                            profit += (sell_amount - positions[-1][2] * positions[-1][3])
-                            capital += sell_amount
+                            total_charges = calculate_total_charges(positions[-1][2], positions[-1][3], sell_price, positions[-1][3])
+                            net_sell_amount = sell_amount - total_charges
+                            profit += (net_sell_amount - positions[-1][2] * positions[-1][3])
+                            capital += net_sell_amount
                             positions.append(('Sell (DEMA Condition)', sell_candidate.name.strftime('%Y-%m-%d'), sell_price, positions[-1][3], capital, company_index))
                             invested = False
                             invested_company = None
                             break
 
-                        # Check max holding period
+                        # Sell at the end of the max holding period
                         elif future_date == future_dates[-1]:
                             sell_price = sell_candidate['Close']
                             sell_amount = sell_price * positions[-1][3]
-                            profit += (sell_amount - positions[-1][2] * positions[-1][3])
-                            capital += sell_amount
+                            total_charges = calculate_total_charges(positions[-1][2], positions[-1][3], sell_price, positions[-1][3])
+                            net_sell_amount = sell_amount - total_charges
+                            profit += (net_sell_amount - positions[-1][2] * positions[-1][3])
+                            capital += net_sell_amount
                             positions.append(('Sell (Max Holding Period)', sell_candidate.name.strftime('%Y-%m-%d'), sell_price, positions[-1][3], capital, company_index))
                             invested = False
                             invested_company = None
                             break
 
         current_start_date += pd.Timedelta(days=1)
-
+        
     # Calculate final profit percentage
     final_profit_percentage = ((capital - initial_capital) / initial_capital) * 100
 
@@ -163,7 +215,7 @@ def backtest_trading_strategy(data_list, initial_capital, max_holding_period):
 
     return positions, capital, final_profit_percentage, max_profit, max_loss, accuracy, max_drawdown
 
-# Load historical stock data for multiple companies from CSV files
+# Load data for the companies
 file_paths = [
     r"C:\Documents\GitHub\AngelOne\historical files\ADANIENT-EQ_ONE_DAY_candle_data.csv",  #0
     r"C:\Documents\GitHub\AngelOne\historical files\ADANIPORTS-EQ_ONE_DAY_candle_data.csv",  #1
@@ -218,7 +270,7 @@ file_paths = [
 
     r"C:\Documents\GitHub\AngelOne\historical files\ABB-EQ_ONE_DAY_candle_data.csv",  #50
     r"C:\Documents\GitHub\AngelOne\historical files\ADANIENSOL-EQ_ONE_DAY_candle_data.csv",  #51
-    # r"C:\Documents\GitHub\AngelOne\historical files\ADANIGREEN-EQ_ONE_DAY_candle_data.csv",  #52
+    r"C:\Documents\GitHub\AngelOne\historical files\ADANIGREEN-EQ_ONE_DAY_candle_data.csv",  #52
     r"C:\Documents\GitHub\AngelOne\historical files\ADANIPOWER-EQ_ONE_DAY_candle_data.csv",  #53
     r"C:\Documents\GitHub\AngelOne\historical files\ATGL-EQ_ONE_DAY_candle_data.csv",  #54
     r"C:\Documents\GitHub\AngelOne\historical files\AMBUJACEM-EQ_ONE_DAY_candle_data.csv",  #55
@@ -294,7 +346,7 @@ file_paths = [
     r"C:\Documents\GitHub\AngelOne\historical files\INDHOTEL-EQ_ONE_DAY_candle_data.csv",  #124
     r"C:\Documents\GitHub\AngelOne\historical files\INDUSTOWER-EQ_ONE_DAY_candle_data.csv",  #125
     r"C:\Documents\GitHub\AngelOne\historical files\JUBLFOOD-EQ_ONE_DAY_candle_data.csv",  #126
-    r"C:\Documents\GitHub\AngelOne\historical files\LTF-BL_ONE_DAY_candle_data.csv",  #127
+    # r"C:\Documents\GitHub\AngelOne\historical files\LTF-BL_ONE_DAY_candle_data.csv",  #127
     r"C:\Documents\GitHub\AngelOne\historical files\LTTS-EQ_ONE_DAY_candle_data.csv",  #128
     r"C:\Documents\GitHub\AngelOne\historical files\LUPIN-EQ_ONE_DAY_candle_data.csv",  #129
     r"C:\Documents\GitHub\AngelOne\historical files\MRF-EQ_ONE_DAY_candle_data.csv",  #130
@@ -319,11 +371,10 @@ file_paths = [
     r"C:\Documents\GitHub\AngelOne\historical files\YESBANK-EQ_ONE_DAY_candle_data.csv",  #149
 ]
 
-# Load data into a list of DataFrames
 data_list = [pd.read_csv(file_path, parse_dates=['Timestamp'], index_col='Timestamp') for file_path in file_paths]
 
 # Run the backtest
-positions, final_capital, final_profit_percentage, max_profit, max_loss, accuracy, max_drawdown = backtest_trading_strategy(data_list, initial_capital=40000, max_holding_period=37)
+positions, final_capital, final_profit_percentage, max_profit, max_loss, accuracy, max_drawdown = backtest_trading_strategy(data_list, initial_capital=40000, max_holding_period=23)
 
 # Output the results
 print("Positions:")
@@ -352,4 +403,4 @@ with open('backtest_results3.csv', 'a', newline='') as file:
     writer.writerow(['Accuracy:', accuracy])
     writer.writerow(['Maximum Drawdown:', max_drawdown])
 
-print("Backtest results saved to backtest_results.csv")
+print("Backtest results saved to backtest_results_with_charges.csv")
