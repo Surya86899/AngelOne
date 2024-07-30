@@ -40,21 +40,16 @@ def is_business_day(now):
     today = now.date()
     holidays_df = nselib.trading_holiday_calendar()  # Get the DataFrame from nselib
 
-    # Debug: Print the first few rows of the DataFrame
-    print("Sample DataFrame:")
-    print(holidays_df.head())
-
-    # Ensure the 'tradingDate' column is of type datetime.date
+    # Convert 'tradingDate' to datetime.date
     holidays_df['tradingDate'] = pd.to_datetime(holidays_df['tradingDate'], format='%d-%b-%Y').dt.date
-
-    # Convert to list of datetime.date objects
-    holidays = holidays_df['tradingDate'].tolist()  # Convert to list for faster lookup
+    
+    # Convert 'tradingDate' column to list for easy comparison
+    holidays = holidays_df['tradingDate'].tolist()
 
     # Check if today is a weekend or a holiday
     if today.weekday() >= 5 or today in holidays:
         return False
     return True
-
 
 # Function to login
 def my_login(api_key: str, username: str, pwd: str,token: str) -> tuple:

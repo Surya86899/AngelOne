@@ -1,39 +1,22 @@
-import nselib
-import numpy as np
+from datetime import datetime
 import pandas as pd
-import datetime as dt
-
-# def is_business_day(now):
-#     today = now.date()
-#     holidays_df = nselib.trading_holiday_calendar()
-#     holidays_df['tradingDate'] = pd.to_datetime(holidays_df['tradingDate'], format='%d-%b-%Y').dt.date
-#     holidays = holidays_df['tradingDate'].values  # Convert to array of datetime.date objects
-
-#     # Ensure all columns used in np.select have consistent data types
-#     holidays_df['HolidayType'] = holidays_df['HolidayType'].astype(str)
-
-#     condition1 = (holidays_df['HolidayType'] == 'National')
-#     conditions = [condition1]
-
-#     value1 = 'National Holiday'
-#     values = [value1]
-#     default_value = 'Other'
-
-#     holidays_df['Product'] = np.select(conditions, values, default=default_value)
-
-#     if today.weekday() >= 5 or today in holidays:
-#         return False
-#     return True
+import nselib
 
 def is_business_day(now):
     today = now.date()
-    holidays_df = nselib.trading_holiday_calendar()  # Assuming this returns a DataFrame
-    holidays_df['tradingDate'] = pd.to_datetime(holidays_df['tradingDate'], format='%d-%b-%Y').dt.date
-    holidays = holidays_df['tradingDate'].values  # Convert to array of datetime.date objects
+    holidays_df = nselib.trading_holiday_calendar()  # Get the DataFrame from nselib
 
+    # Convert 'tradingDate' to datetime.date
+    holidays_df['tradingDate'] = pd.to_datetime(holidays_df['tradingDate'], format='%d-%b-%Y').dt.date
+    
+    # Convert 'tradingDate' column to list for easy comparison
+    holidays = holidays_df['tradingDate'].tolist()
+
+    # Check if today is a weekend or a holiday
     if today.weekday() >= 5 or today in holidays:
         return False
     return True
 
-now = dt.datetime.now()
-print(is_business_day(now))
+# Test the function with a specific date
+now = datetime.now()
+print(f"Is today ({now}) a business day? {is_business_day(now)}")
