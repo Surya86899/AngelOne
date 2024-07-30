@@ -35,6 +35,12 @@ jobs:
           pip install -r requirements_dev.txt
 
       - name: Run Python script
+        env:
+          API_KEY: ${{ secrets.API_KEY }}
+          PWD: ${{ secrets.PWD }}
+          USERNAME: ${{ secrets.USERNAME }}
+          TOKEN: ${{ secrets.TOKEN }}
+          EMAIL_PASS: ${{ secrets.EMAIL_PASS }}
         run: |
           source .venv/bin/activate
           python btlivetradingmain.py
