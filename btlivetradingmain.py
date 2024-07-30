@@ -20,8 +20,8 @@ from typing import Dict, Any, List, Union
 from dotenv import load_dotenv
 import os
 
-# Load environment variables from .env file
-load_dotenv()
+# # Load environment variables from .env file
+# load_dotenv()
 
 # Access the variables
 api_key = os.getenv('API_KEY')
