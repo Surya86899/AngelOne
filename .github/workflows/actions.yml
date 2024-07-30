@@ -3,6 +3,7 @@ name: Scheduled Workflow
 on:
   schedule:
     - cron: '15 9,10,11,12,13,14,15 * * 1-5'  # Run at 15 minutes past each hour from 9 AM to 3 PM on weekdays
+  workflow_dispatch:  # Allows manual triggering of the workflow
 
 jobs:
   run-scheduled-task:
