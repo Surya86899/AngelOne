@@ -34,4 +34,3 @@ pandas
 scipy
 nselib
 ta
-nselib.capital_market
