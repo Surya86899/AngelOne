@@ -119,17 +119,17 @@ def my_login():
     try:
         totp = pyotp.TOTP(token).now()
     except Exception as e:
-        logger.error("Invalid Token: The provided token is not valid.")
+        logging.error("Invalid Token: The provided token is not valid.")
         raise e
 
     try:
         data = smartApi.generateSession(username, pwd, totp)
     except Exception as e:
-        logger.error(f"Error generating session: {e}")
+        logging.error(f"Error generating session: {e}")
         return None, None
 
     if not data['status']:
-        logger.error(data)
+        logging.error(data)
         return data, None, None
     else:
         # login api call

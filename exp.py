@@ -87,11 +87,11 @@ load_dotenv()
 api_key = os.getenv('API_KEY')
 pwd = os.getenv('PWD')
 username = os.getenv('USERNAME')
-token = os.getenv('TOKEN')
+tokenenv = os.getenv('TOKEN')
 email_pass = os.getenv('EMAIL_PASS')
 
 # Function to login
-def my_login(api_key: str, username: str, pwd: str,token: str) -> tuple:
+def my_login():
     """
     Login to the API and return headers and message.
 
@@ -104,7 +104,7 @@ def my_login(api_key: str, username: str, pwd: str,token: str) -> tuple:
     - tuple: Headers and message.
     """
     smartApi = SmartConnect(api_key)
-    token = token  # Ensure this is correct and valid
+    token = tokenenv  # Ensure this is correct and valid
 
     try:
         totp = pyotp.TOTP(token).now()
@@ -141,6 +141,6 @@ def my_login(api_key: str, username: str, pwd: str,token: str) -> tuple:
         }
     return headers, msg
 
-print(my_login(api_key, username, pwd, token))
+print(my_login())
 
 
