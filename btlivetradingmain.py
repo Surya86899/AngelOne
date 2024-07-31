@@ -23,13 +23,6 @@ import os
 # # Load environment variables from .env file
 # load_dotenv()
 
-# Access the variables
-api_key = os.getenv('API_KEY')
-pwd = os.getenv('MPIN')
-username = os.getenv('USERNAME')
-tokenenv = os.getenv('TOKEN')
-email_pass = os.getenv('EMAIL_PASS')
-
 # Set up logging configuration at the beginning of your file
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 # Set up logging
@@ -634,23 +627,23 @@ def main():
         # Add this to print environment variables for debugging
         api_key = os.getenv('API_KEY')
         username = os.getenv('USERNAME')
-        password = os.getenv('PWD')
-        token = os.getenv('TOKEN')
+        password = os.getenv('MPIN')
+        tokenenv = os.getenv('TOKEN')
         email_pass = os.getenv('EMAIL_PASS')
 
         logging.info(f"API_KEY: {api_key}")
         logging.info(f"USERNAME: {username}")
         logging.info(f"PWD: {password}")
-        logging.info(f"TOKEN: {token}")
+        logging.info(f"TOKEN: {tokenenv}")
         logging.info(f"EMAIL_PASS: {email_pass}")
 
-        if not all([api_key, username, password, token, email_pass]):
+        if not all([api_key, username, password, tokenenv, email_pass]):
             logging.error("Missing environment variables for API login.")
         else:
             logging.info("All environment variables are set.")
     
         for attempt in range(max_retries):
-            headers, msg = my_login(api_key,pwd,username,tokenenv)
+            headers, msg = my_login(api_key,password,username,tokenenv)
 
             if msg == 'SUCCESS':
                 logging.info("Login successful.")
