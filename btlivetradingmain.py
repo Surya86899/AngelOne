@@ -25,7 +25,7 @@ import os
 
 # Access the variables
 api_key = os.getenv('API_KEY')
-pwd = os.getenv('PWD')
+pwd = os.getenv('MPIN')
 username = os.getenv('USERNAME')
 tokenenv = os.getenv('TOKEN')
 email_pass = os.getenv('EMAIL_PASS')
@@ -632,7 +632,7 @@ def main():
         msg = None
 
         api_key = os.getenv('API_KEY')
-        pwd = os.getenv('PWD')
+        pwd = os.getenv('MPIN')
         username = os.getenv('USERNAME')
         tokenenv = os.getenv('TOKEN')
 
