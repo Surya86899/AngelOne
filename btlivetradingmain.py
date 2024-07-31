@@ -24,10 +24,10 @@ import os
 # load_dotenv()
 
 # Access the variables
-# api_key = os.getenv('API_KEY')
-# pwd = os.getenv('PWD')
-# username = os.getenv('USERNAME')
-# tokenenv = os.getenv('TOKEN')
+api_key = os.getenv('API_KEY')
+pwd = os.getenv('PWD')
+username = os.getenv('USERNAME')
+tokenenv = os.getenv('TOKEN')
 email_pass = os.getenv('EMAIL_PASS')
 
 # Set up logging configuration at the beginning of your file
@@ -101,11 +101,7 @@ def is_business_day(now):
     return True
 
 # Function to login
-def my_login():
-    api_key = os.getenv('API_KEY')
-    pwd = os.getenv('MPIN')
-    username = os.getenv('USERNAME')
-    tokenenv = os.getenv('TOKEN')
+def my_login(api_key,pwd,username,tokenenv):
     """
     Login to the API and return headers and message.
 
@@ -118,11 +114,6 @@ def my_login():
     - tuple: Headers and message.
     """
     smartApi = SmartConnect(api_key)
-    # token = tokenenv  # Ensure this is correct and valid
-    print(api_key)
-    print(pwd)
-    print(username)
-    print(tokenenv)
 
     try:
         totp = pyotp.TOTP(tokenenv).now()
@@ -138,7 +129,7 @@ def my_login():
 
     if not data['status']:
         logging.error(data)
-        return data, None, None
+        return None, None
     else:
         # login api call
         # logger.info(f"Your Credentials: {data}")
@@ -640,8 +631,18 @@ def main():
         headers = None
         msg = None
 
+        api_key = os.getenv('API_KEY')
+        pwd = os.getenv('PWD')
+        username = os.getenv('USERNAME')
+        tokenenv = os.getenv('TOKEN')
+        email_pass = os.getenv('EMAIL_PASS')
+
+        if not all([api_key, username, pwd, tokenenv]):
+            logging.error("Missing environment variables for API login.")
+            return
+    
         for attempt in range(max_retries):
-            headers, msg = my_login()
+            headers, msg = my_login(api_key,pwd,username,tokenenv)
 
             if msg == 'SUCCESS':
                 logging.info("Login successful.")
