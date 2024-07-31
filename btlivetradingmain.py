@@ -103,7 +103,7 @@ def is_business_day(now):
 # Function to login
 def my_login():
     api_key = os.getenv('API_KEY')
-    pwd = os.getenv('PWD')
+    pwd = os.getenv('MPIN')
     username = os.getenv('USERNAME')
     tokenenv = os.getenv('TOKEN')
     """
