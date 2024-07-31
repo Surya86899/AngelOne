@@ -631,14 +631,23 @@ def main():
         headers = None
         msg = None
 
+        # Add this to print environment variables for debugging
         api_key = os.getenv('API_KEY')
-        pwd = os.getenv('MPIN')
         username = os.getenv('USERNAME')
-        tokenenv = os.getenv('TOKEN')
+        password = os.getenv('PWD')
+        token = os.getenv('TOKEN')
+        email_pass = os.getenv('EMAIL_PASS')
 
-        if not all([api_key, username, pwd, tokenenv]):
+        logging.info(f"API_KEY: {api_key}")
+        logging.info(f"USERNAME: {username}")
+        logging.info(f"PWD: {password}")
+        logging.info(f"TOKEN: {token}")
+        logging.info(f"EMAIL_PASS: {email_pass}")
+
+        if not all([api_key, username, password, token, email_pass]):
             logging.error("Missing environment variables for API login.")
-            return
+        else:
+            logging.info("All environment variables are set.")
     
         for attempt in range(max_retries):
             headers, msg = my_login(api_key,pwd,username,tokenenv)
