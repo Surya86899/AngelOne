@@ -491,7 +491,14 @@ def checkforsellingopportunities( headers, companiesdict, available_cash, start_
     """
     # Read the CSV file into a DataFrame
     csv_file_path = "investment.csv"
-    df = pd.read_csv(csv_file_path, header=None)
+    try:
+        df = pd.read_csv(csv_file_path, header=None)
+    except FileNotFoundError:
+        logging.error(f"File not found: {csv_file_path}")
+        return
+    except Exception as e:
+        logging.error(f"Error reading {csv_file_path}: {e}")
+        return
 
     # Ensure correct column names
     column_names = ['action','quantity','stock','stock_token','date','buy_price','sl']
@@ -526,7 +533,7 @@ def checkforsellingopportunities( headers, companiesdict, available_cash, start_
 
     # Check if DataFrame is empty
     if df.empty:
-        print("No data to process.")
+        logging.info("No data to process.")
         return
 
     # Iterate over each row in the DataFrame
@@ -537,7 +544,7 @@ def checkforsellingopportunities( headers, companiesdict, available_cash, start_
             logging.warning(f"Invalid date format for row index {index}")
             continue
         if end_date[:10] == buy_date:
-            print(index)
+            logging.info(f"Skipping row {index} with buy date {buy_date} matching end_date")
             continue
         stock = row['stock']
         stock_token = row['stock_token']
@@ -612,6 +619,7 @@ def checkforsellingopportunities( headers, companiesdict, available_cash, start_
 
     # Save updated DataFrame to CSV
     df.to_csv(csv_file_path, index=False,header=False)
+    logging.info(f"Updated DataFrame saved to {csv_file_path}.")
 
 def main():
     # Check if today is a business day and then fetch funds
