@@ -27,7 +27,7 @@ import os
 api_key = os.getenv('API_KEY')
 pwd = os.getenv('PWD')
 username = os.getenv('USERNAME')
-token = os.getenv('TOKEN')
+tokenenv = os.getenv('TOKEN')
 email_pass = os.getenv('EMAIL_PASS')
 
 # Set up logging configuration at the beginning of your file
@@ -101,7 +101,7 @@ def is_business_day(now):
     return True
 
 # Function to login
-def my_login(api_key: str, username: str, pwd: str,token: str) -> tuple:
+def my_login():
     """
     Login to the API and return headers and message.
 
@@ -114,7 +114,7 @@ def my_login(api_key: str, username: str, pwd: str,token: str) -> tuple:
     - tuple: Headers and message.
     """
     smartApi = SmartConnect(api_key)
-    token = token  # Ensure this is correct and valid
+    token = tokenenv  # Ensure this is correct and valid
 
     try:
         totp = pyotp.TOTP(token).now()
@@ -633,7 +633,7 @@ def main():
         msg = None
 
         for attempt in range(max_retries):
-            headers, msg = my_login(api_key, username, pwd, token) # api_key, username, pwd, token are all environment secret variable
+            headers, msg = my_login()
 
             if msg == 'SUCCESS':
                 logging.info("Login successful.")
