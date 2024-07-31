@@ -123,7 +123,7 @@ def my_login():
         raise e
 
     try:
-        data = smartApi.generateSession(username, pwd, totp)
+        data = smartApi.generateSession(username=username, pwd=pwd, totp=totp)
     except Exception as e:
         logging.error(f"Error generating session: {e}")
         return None, None
