@@ -328,7 +328,7 @@ def send_email(message):
     # Create email message object
     # Log the received message
     # logging.info(f"Received message to send: {message}")
-    
+    email_pass = os.getenv('EMAIL_PASS')
     msg = EmailMessage()
     
     # Determine table headers based on the action
@@ -635,7 +635,6 @@ def main():
         pwd = os.getenv('PWD')
         username = os.getenv('USERNAME')
         tokenenv = os.getenv('TOKEN')
-        email_pass = os.getenv('EMAIL_PASS')
 
         if not all([api_key, username, pwd, tokenenv]):
             logging.error("Missing environment variables for API login.")
