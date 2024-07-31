@@ -573,6 +573,8 @@ def checkforsellingopportunities( headers, companiesdict, available_cash, start_
         # print(today)
         # print(sl)
         # print(targetnotach)
+        logging.info(today["Timestamp"].date())
+        logging.info(max_holding_date.date())
 
         # Check if 4% target is achieved
         if targetnotach and today['High'] >= (row['buy_price'] * 1.04):
@@ -837,7 +839,8 @@ def main():
         # else:
         #     checkforsellingopportunities( headers, companiesdict, available_cash, start_date, end_date)
         
-        checkforinvestmentopportunities( headers, companiesdict, available_cash, start_date, end_date)
+        
+        # checkforinvestmentopportunities( headers, companiesdict, available_cash, start_date, end_date)
         checkforsellingopportunities( headers, companiesdict, available_cash, start_date, end_date)
         
 if __name__ == '__main__':

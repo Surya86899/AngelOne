@@ -79,68 +79,71 @@ import os
 from dotenv import load_dotenv
 import pyotp
 from SmartAPI import SmartConnect
+import datetime as dt
 
-# Load environment variables from .env file
-load_dotenv()
+purchase_date = dt.datetime.strptime("2024-06-07", '%Y-%m-%d')
+# Generate business date range
+bdate_range = pd.bdate_range(start=purchase_date, periods=24)  # Get the next 24 business days
+# print(bdate_range)
+if len(bdate_range) >= 24:
+    max_holding_date = bdate_range[-1]
 
-# Access the variables
-api_key = os.getenv('API_KEY')
-pwd = os.getenv('PWD')
-username = os.getenv('USERNAME')
-tokenenv = os.getenv('TOKEN')
-email_pass = os.getenv('EMAIL_PASS')
+today = dt.datetime.now().date
+if today >= max_holding_date.date():
+    print("sell")
 
-# Function to login
-def my_login():
-    """
-    Login to the API and return headers and message.
 
-    Parameters:
-    - api_key (str): API key for authentication.
-    - username (str): Username for login.
-    - pwd (str): Password for login.
+# # Function to login
+# def my_login():
+#     """
+#     Login to the API and return headers and message.
 
-    Returns:
-    - tuple: Headers and message.
-    """
-    smartApi = SmartConnect(api_key)
-    token = tokenenv  # Ensure this is correct and valid
+#     Parameters:
+#     - api_key (str): API key for authentication.
+#     - username (str): Username for login.
+#     - pwd (str): Password for login.
 
-    try:
-        totp = pyotp.TOTP(token).now()
-    except Exception as e:
-        logging.error("Invalid Token: The provided token is not valid.")
-        raise e
+#     Returns:
+#     - tuple: Headers and message.
+#     """
+#     smartApi = SmartConnect(api_key)
+#     token = tokenenv  # Ensure this is correct and valid
 
-    try:
-        data = smartApi.generateSession(username, pwd, totp)
-    except Exception as e:
-        logging.error(f"Error generating session: {e}")
-        return None, None
+#     try:
+#         totp = pyotp.TOTP(token).now()
+#     except Exception as e:
+#         logging.error("Invalid Token: The provided token is not valid.")
+#         raise e
 
-    if not data['status']:
-        logging.error(data)
-        return data, None, None
-    else:
-        # login api call
-        # logger.info(f"Your Credentials: {data}")
-        authToken = data['data']['jwtToken']
-        msg = data['message']
+#     try:
+#         data = smartApi.generateSession(username, pwd, totp)
+#     except Exception as e:
+#         logging.error(f"Error generating session: {e}")
+#         return None, None
 
-        # Update the Authorization header with the received JWT token
-        headers = {
-            'Authorization': f'{authToken}',
-            'Content-Type': 'application/json',
-            'Accept': 'application/json',
-            'X-UserType': 'USER',
-            'X-SourceID': 'WEB',
-            'X-ClientLocalIP': '192.168.0.105',
-            'X-ClientPublicIP': '192.168.0.105',
-            'X-MACAddress': '50-C2-E8-8F-5A-85',
-            'X-PrivateKey': api_key  # Include api_key dynamically in the header
-        }
-    return headers, msg
+#     if not data['status']:
+#         logging.error(data)
+#         return data, None, None
+#     else:
+#         # login api call
+#         # logger.info(f"Your Credentials: {data}")
+#         authToken = data['data']['jwtToken']
+#         msg = data['message']
 
-print(my_login())
+#         # Update the Authorization header with the received JWT token
+#         headers = {
+#             'Authorization': f'{authToken}',
+#             'Content-Type': 'application/json',
+#             'Accept': 'application/json',
+#             'X-UserType': 'USER',
+#             'X-SourceID': 'WEB',
+#             'X-ClientLocalIP': '192.168.0.105',
+#             'X-ClientPublicIP': '192.168.0.105',
+#             'X-MACAddress': '50-C2-E8-8F-5A-85',
+#             'X-PrivateKey': api_key  # Include api_key dynamically in the header
+#         }
+#     return headers, msg
+
+# print(my_login())
 
 
