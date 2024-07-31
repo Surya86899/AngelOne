@@ -24,10 +24,10 @@ import os
 # load_dotenv()
 
 # Access the variables
-api_key = os.getenv('API_KEY')
-pwd = os.getenv('PWD')
-username = os.getenv('USERNAME')
-tokenenv = os.getenv('TOKEN')
+# api_key = os.getenv('API_KEY')
+# pwd = os.getenv('PWD')
+# username = os.getenv('USERNAME')
+# tokenenv = os.getenv('TOKEN')
 email_pass = os.getenv('EMAIL_PASS')
 
 # Set up logging configuration at the beginning of your file
@@ -102,6 +102,10 @@ def is_business_day(now):
 
 # Function to login
 def my_login():
+    api_key = os.getenv('API_KEY')
+    pwd = os.getenv('PWD')
+    username = os.getenv('USERNAME')
+    tokenenv = os.getenv('TOKEN')
     """
     Login to the API and return headers and message.
 
@@ -114,16 +118,20 @@ def my_login():
     - tuple: Headers and message.
     """
     smartApi = SmartConnect(api_key)
-    token = tokenenv  # Ensure this is correct and valid
+    # token = tokenenv  # Ensure this is correct and valid
+    print(api_key)
+    print(pwd)
+    print(username)
+    print(tokenenv)
 
     try:
-        totp = pyotp.TOTP(token).now()
+        totp = pyotp.TOTP(tokenenv).now()
     except Exception as e:
         logging.error("Invalid Token: The provided token is not valid.")
         raise e
 
     try:
-        data = smartApi.generateSession(username, pwd=pwd, totp=totp)
+        data = smartApi.generateSession(username, pwd, totp)
     except Exception as e:
         logging.error(f"Error generating session: {e}")
         return None, None
