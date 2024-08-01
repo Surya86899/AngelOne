@@ -576,9 +576,6 @@ def checkforsellingopportunities( headers, companiesdict, available_cash, start_
         logging.info(today["Timestamp"].date())
         logging.info(max_holding_date.date())
 
-        if today["Timestamp"].date() >= max_holding_date.date():
-            print("sell")
-
         if today["Timestamp"].date() >= max_holding_date.date(): #time.time >= 15:15 and
             # Sell on the max holding period
             sell_price = today['Close']
@@ -843,7 +840,7 @@ def main():
         #     checkforsellingopportunities( headers, companiesdict, available_cash, start_date, end_date)
         
 
-        # checkforinvestmentopportunities( headers, companiesdict, available_cash, start_date, end_date)
+        checkforinvestmentopportunities( headers, companiesdict, available_cash, start_date, end_date)
         checkforsellingopportunities( headers, companiesdict, available_cash, start_date, end_date)
         
 if __name__ == '__main__':

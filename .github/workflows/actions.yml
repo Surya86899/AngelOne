@@ -2,7 +2,7 @@ name: Scheduled Workflow
 
 on:
   schedule:
-    - cron: '15 9-15 * * 1-5'  # Run at 15 minutes past each hour from 9 AM to 3 PM on weekdays
+    - cron: '45 3-9 * * 1-5'  # Run at 45 minutes past each hour from 3:45 AM to 9:45 AM UTC (9:15 AM to 3:15 PM IST) on weekdays
   workflow_dispatch:  # Allows manual triggering of the workflow
 
 jobs:
