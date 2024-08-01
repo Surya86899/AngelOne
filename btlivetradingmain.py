@@ -610,14 +610,18 @@ def checkforsellingopportunities( headers, companiesdict, available_cash, start_
             rows_to_delete.append(index)  # Mark for deletion
 
     # Update rows in DataFrame
-    for index, new_action, new_sl in updated_rows:
-        df.loc[index, 'action'] = new_action
-        df.loc[index, 'sl'] = new_sl
+    if updated_rows is not None:
+        for index, new_action, new_sl in updated_rows:
+            df.loc[index, 'action'] = new_action
+            df.loc[index, 'sl'] = new_sl
 
-    if updated_rows or email_msg:
+    if email_msg is not None:
         send_email(email_msg)
+
+    if rows_to_delete is not None:
         # Delete rows from DataFrame
         df = df.drop(rows_to_delete)
+
 
     # Save updated DataFrame to CSV
     df.to_csv(csv_file_path, index=False,header=False)
