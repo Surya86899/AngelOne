@@ -576,6 +576,23 @@ def checkforsellingopportunities( headers, companiesdict, available_cash, start_
         logging.info(today["Timestamp"].date())
         logging.info(max_holding_date.date())
 
+        if today["Timestamp"].date() >= max_holding_date.date():
+            print("sell")
+
+        if today["Timestamp"].date() >= max_holding_date.date(): #time.time >= 15:15 and
+            # Sell on the max holding period
+            sell_price = today['Close']
+            updated_rows.append((index, 'Max Holding Period', sell_price))
+            email_msg.append(('Max Holding Period',row['quantity'],row['stock'],row['stock_token'],end_date,sell_price,'-'))
+            rows_to_delete.append(index)  # Mark for deletion
+
+        elif today['Low'] <= sl:
+            # Update with new stop-loss price
+            sell_price = sl
+            updated_rows.append((index, 'Stop Loss Hit', sell_price))
+            email_msg.append(('Stop Loss Hit',row['quantity'],row['stock'],row['stock_token'],end_date,sell_price,sl))
+            rows_to_delete.append(index)  # Optional, depending on your logic
+
         # Check if 4% target is achieved
         if targetnotach and today['High'] >= (row['buy_price'] * 1.04):
             if today['DEMA_5'] > today['DEMA_8'] > today['DEMA_13']:
@@ -588,13 +605,6 @@ def checkforsellingopportunities( headers, companiesdict, available_cash, start_
                 email_msg.append(('Sell 4% Hit',row['quantity'],row['stock'],row['stock_token'],end_date,sell_price,'-'))
                 rows_to_delete.append(index)  # Mark for deletion
 
-        elif today['Low'] <= sl:
-            # Update with new stop-loss price
-            sell_price = sl
-            updated_rows.append((index, 'Stop Loss Hit', sell_price))
-            email_msg.append(('Stop Loss Hit',row['quantity'],row['stock'],row['stock_token'],end_date,sell_price,sl))
-            rows_to_delete.append(index)  # Optional, depending on your logic
-
         elif not targetnotach and today['DEMA_5'] < today['DEMA_8']:
             # Perform the sell operation
             sell_price = today['Close']
@@ -602,13 +612,6 @@ def checkforsellingopportunities( headers, companiesdict, available_cash, start_
             email_msg.append(('DEMA Condition (Sell)',row['quantity'],row['stock'],row['stock_token'],end_date,sell_price,'-'))
             rows_to_delete.append(index)  # Mark for deletion
 
-        elif today["Timestamp"].date() >= max_holding_date.date(): #time.time >= 15:15 and
-            # Sell on the max holding period
-            sell_price = today['Close']
-            updated_rows.append((index, 'Max Holding Period', sell_price))
-            email_msg.append(('Max Holding Period',row['quantity'],row['stock'],row['stock_token'],end_date,sell_price,'-'))
-            rows_to_delete.append(index)  # Mark for deletion
-        
     # Update rows in DataFrame
     for index, new_action, new_sl in updated_rows:
         df.loc[index, 'action'] = new_action
@@ -839,7 +842,7 @@ def main():
         # else:
         #     checkforsellingopportunities( headers, companiesdict, available_cash, start_date, end_date)
         
-        
+
         # checkforinvestmentopportunities( headers, companiesdict, available_cash, start_date, end_date)
         checkforsellingopportunities( headers, companiesdict, available_cash, start_date, end_date)
         
