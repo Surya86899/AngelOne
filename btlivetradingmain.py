@@ -591,7 +591,7 @@ def checkforsellingopportunities( headers, companiesdict, available_cash, start_
             rows_to_delete.append(index)  # Optional, depending on your logic
 
         # Check if 4% target is achieved
-        if targetnotach and today['High'] >= (row['buy_price'] * 1.04):
+        elif targetnotach and today['High'] >= (row['buy_price'] * 1.04):
             if today['DEMA_5'] > today['DEMA_8'] > today['DEMA_13']:
                 # Update stop-loss to 2% down from the 4% target
                 new_sl = row['buy_price'] * 1.02
