@@ -351,6 +351,8 @@ def send_email(message):
                     </tbody>
                 </table>
                 <p></p>
+                <p style="color:blue">Note: <bold>Create a Good-Till-Triggered (GTT) order</bold> for your stop loss so that you save your money</p>
+                <p></p>
                 <p style="color:red">Note: This is a system-generated email. Do your analysis before investing.</p>
             </div>
         </body>
@@ -361,7 +363,7 @@ def send_email(message):
     msg.add_alternative(html_content, subtype='html')
 
     sender_email = 'dora42240@gmail.com'
-    recipients = ['vu4f2122034@pvppcoe.ac.in'] #, 'babudora00@gmail.com']
+    recipients = ['vu4f2122034@pvppcoe.ac.in','mitulcha13@gmail.com','shaneesharma33@gmail.com','nikhilmali810@gmail.com','Ayushghag99@gmail.com','ramdaschaugale33@gmail.com','shaamakm@gmail.com'] #, 'babudora00@gmail.com']
     
     msg['Subject'] = "Trading details from Surya"
     msg['From'] = sender_email
@@ -645,11 +647,11 @@ def main():
         tokenenv = os.getenv('TOKEN')
         email_pass = os.getenv('EMAIL_PASS')
 
-        logging.info(f"API_KEY: {api_key}")
-        logging.info(f"USERNAME: {username}")
-        logging.info(f"PWD: {password}")
-        logging.info(f"TOKEN: {tokenenv}")
-        logging.info(f"EMAIL_PASS: {email_pass}")
+        # logging.info(f"API_KEY: {api_key}")
+        # logging.info(f"USERNAME: {username}")
+        # logging.info(f"PWD: {password}")
+        # logging.info(f"TOKEN: {tokenenv}")
+        # logging.info(f"EMAIL_PASS: {email_pass}")
 
         if not all([api_key, username, password, tokenenv, email_pass]):
             logging.error("Missing environment variables for API login.")
