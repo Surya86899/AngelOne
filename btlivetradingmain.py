@@ -163,7 +163,7 @@ def myfunds(headers):
         data = res.read()
         funds_str = data.decode('utf-8')  # Decode bytes to string
         funds_dict = json.loads(funds_str)  # Parse JSON string to dictionary
-        return 15000#funds_dict
+        return 10000#funds_dict
     except Exception as e:
         logger.error(f"An error occured: {e}")
         return None
@@ -443,7 +443,7 @@ def checkforinvestmentopportunities( headers, companiesdict, available_cash, sta
     
     for i, (symbol, token) in enumerate(companiesdict.items(), start=1):
         
-        if available_cash < 10000:
+        if available_cash < 9000:
             logging.info("Available cash is below the threshold. Exiting.")
             break
 
@@ -467,6 +467,7 @@ def checkforinvestmentopportunities( headers, companiesdict, available_cash, sta
                 if max_shares > 0:
                     sl = today['Close'] - (today['Close'] * 0.03)
                     investment_details = ["BUY", max_shares, symbol, token, today['Timestamp'].strftime('%Y-%m-%d'),today["Close"], sl]
+                    logging.info(investment_details)
                     investment.append(investment_details)
                     available_cash = myfunds(headers)
         except Exception as e:
