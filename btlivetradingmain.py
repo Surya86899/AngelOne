@@ -388,14 +388,19 @@ def save_in_csv(data: List[List[Union[str, int, float]]], file_name: str = 'inve
     - file_name (str): The name of the CSV file. Defaults to 'investment.csv'.
     """
     try:
+        # Ensure the directory exists
+        os.makedirs(os.path.dirname(file_name), exist_ok=True)
+
         # Open the file in append mode
         with open(file_name, 'a', newline='') as file:
             writer = csv.writer(file)
             writer.writerows(data)
+        
         logging.info(f"Data successfully saved to {file_name}.")
+        logging.info(f"File saved at: {os.path.abspath(file_name)}")
     except Exception as e:
-        logging.error(f"Error saving data to CSV: {e}")
-
+        logging.error(f"Error saving data to CSV: {e}, {type(e).__name__}")
+        
 # Function to check buy condition
 def to_invest(historical_data):
     """
