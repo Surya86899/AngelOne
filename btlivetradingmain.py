@@ -389,29 +389,22 @@ def save_in_csv(data: List[List[Union[str, int, float]]], file_name: str = 'inve
     """
     try:
         # Use absolute path
-        file_name = os.path.join(os.getcwd(), file_name)
+        file_path = os.path.join(os.getcwd(), file_name)
         
-        # Check if file exists and its size before writing
-        if os.path.exists(file_name):
-            logging.info(f"File exists at: {os.path.abspath(file_name)}")
-            logging.info(f"File size before: {os.path.getsize(file_name)} bytes")
-
         # Ensure directory exists
-        os.makedirs(os.path.dirname(file_name), exist_ok=True)
+        os.makedirs(os.path.dirname(file_path), exist_ok=True)
 
-        # Open the file in append mode
-        with open(file_name, 'a', newline='') as file:
+        # Open the file in append mode and write data
+        with open(file_path, 'a', newline='') as file:
             writer = csv.writer(file)
             writer.writerows(data)
         
-        logging.info(f"Data successfully saved to {file_name}.")
+        # Log successful data save
+        logging.info(f"Data successfully saved to {file_path}.")
         
-        # Check file size after writing
-        if os.path.exists(file_name):
-            logging.info(f"File size after: {os.path.getsize(file_name)} bytes")
     except Exception as e:
         logging.error(f"Error saving data to CSV: {e}, {type(e).__name__}")
-                
+                        
 # Function to check buy condition
 def to_invest(historical_data):
     """
