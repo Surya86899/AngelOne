@@ -388,7 +388,15 @@ def save_in_csv(data: List[List[Union[str, int, float]]], file_name: str = 'inve
     - file_name (str): The name of the CSV file. Defaults to 'investment.csv'.
     """
     try:
-        # Ensure the directory exists
+        # Use absolute path
+        file_name = os.path.join(os.getcwd(), file_name)
+        
+        # Check if file exists and its size before writing
+        if os.path.exists(file_name):
+            logging.info(f"File exists at: {os.path.abspath(file_name)}")
+            logging.info(f"File size before: {os.path.getsize(file_name)} bytes")
+
+        # Ensure directory exists
         os.makedirs(os.path.dirname(file_name), exist_ok=True)
 
         # Open the file in append mode
@@ -397,10 +405,13 @@ def save_in_csv(data: List[List[Union[str, int, float]]], file_name: str = 'inve
             writer.writerows(data)
         
         logging.info(f"Data successfully saved to {file_name}.")
-        logging.info(f"File saved at: {os.path.abspath(file_name)}")
+        
+        # Check file size after writing
+        if os.path.exists(file_name):
+            logging.info(f"File size after: {os.path.getsize(file_name)} bytes")
     except Exception as e:
         logging.error(f"Error saving data to CSV: {e}, {type(e).__name__}")
-        
+                
 # Function to check buy condition
 def to_invest(historical_data):
     """
@@ -617,18 +628,28 @@ def checkforsellingopportunities( headers, companiesdict, available_cash, start_
             email_msg.append(('DEMA Condition (Sell)',row['quantity'],row['stock'],row['stock_token'],end_date,sell_price,'-'))
             rows_to_delete.append(index)  # Mark for deletion
 
-    # Update rows in DataFrame
-    if updated_rows is not None:
-        for index, new_action, new_sl in updated_rows:
-            df.loc[index, 'action'] = new_action
-            df.loc[index, 'sl'] = new_sl
+    # Update rows in DataFrame if updated_rows is properly structured
+    if updated_rows:
+        if isinstance(updated_rows, list) and all(isinstance(item, tuple) and len(item) == 3 for item in updated_rows):
+            for index, new_action, new_sl in updated_rows:
+                df.loc[index, 'action'] = new_action
+                df.loc[index, 'sl'] = new_sl
+        else:
+            logging.info("updated_rows is either empty or not structured as expected.")
 
-    if email_msg is not None:
-        send_email(email_msg)
+    # Send email if email_msg is correctly structured
+    if email_msg:
+        if isinstance(email_msg, list) and email_msg and isinstance(email_msg[0], list) and email_msg[0]:
+            send_email(email_msg)
+        else:
+            logging.info("Email message is either empty or not structured as expected.")
 
-    if rows_to_delete is not None:
-        # Delete rows from DataFrame
-        df = df.drop(rows_to_delete)
+    # Delete rows from DataFrame if rows_to_delete is properly structured
+    if rows_to_delete:
+        if isinstance(rows_to_delete, list) and all(isinstance(item, int) for item in rows_to_delete):
+            df = df.drop(rows_to_delete)
+        else:
+            logging.info("rows_to_delete is either empty or not a list of indices.")
 
 
     # Save updated DataFrame to CSV
