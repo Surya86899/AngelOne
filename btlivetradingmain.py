@@ -630,52 +630,246 @@ def checkforsellingopportunities( headers, companiesdict, available_cash, start_
     df.to_csv(csv_file_path, index=False,header=False)
     logging.info(f"Updated DataFrame saved to {csv_file_path}.")
 
+# def main():
+#     # Check if today is a business day and then fetch funds
+#     now = dt.datetime.now()
+    
+#     if is_business_day(now):
+#         # Retry login with delay if needed
+#         max_retries = 2
+#         retry_delay = 1
+#         headers = None
+#         msg = None
+
+#         # Add this to print environment variables for debugging
+#         api_key = os.getenv('API_KEY')
+#         username = os.getenv('USERNAME')
+#         password = os.getenv('MPIN')
+#         tokenenv = os.getenv('TOKEN')
+#         email_pass = os.getenv('EMAIL_PASS')
+
+#         # logging.info(f"API_KEY: {api_key}")
+#         # logging.info(f"USERNAME: {username}")
+#         # logging.info(f"PWD: {password}")
+#         # logging.info(f"TOKEN: {tokenenv}")
+#         # logging.info(f"EMAIL_PASS: {email_pass}")
+
+#         if not all([api_key, username, password, tokenenv, email_pass]):
+#             logging.error("Missing environment variables for API login.")
+#         else:
+#             logging.info("All environment variables are set.")
+    
+#         for attempt in range(max_retries):
+#             headers, msg = my_login(api_key,password,username,tokenenv)
+
+#             if msg == 'SUCCESS':
+#                 logging.info("Login successful.")
+#                 break
+#             else:
+#                 logging.error(f"Login attempt {attempt + 1} failed: {msg}")
+#                 if attempt < max_retries - 1:
+#                     logging.info(f"Retrying in {retry_delay} second(s)...")
+#                     time.sleep(retry_delay)
+#         if msg == 'SUCCESS':
+#             # funds = myfunds(headers)
+#             # available_cash = funds.get('availablecash', 0)
+#             available_cash = myfunds(headers)
+
+#         companiesdict = {
+#             "ADANIENT": 25,
+#             "ADANIPORTS": 15083,
+#             "APOLLOHOSP": 157,
+#             "ASIANPAINT": 236,
+#             "AXISBANK": 5900,
+#             "BAJAJ-AUTO": 16669,
+#             "BAJFINANCE": 317,
+#             "BAJAJFINSV": 16675,
+#             "BPCL": 526,
+#             "BHARTIARTL": 10604,
+#             "BRITANNIA": 547,
+#             "CIPLA": 694,
+#             "COALINDIA": 20374,
+#             "DIVISLAB": 10940,
+#             "DRREDDY": 881,
+#             "EICHERMOT": 910,
+#             "GRASIM": 1232,
+#             "HCLTECH": 7229,
+#             "HDFCBANK": 1333,
+#             "HDFCLIFE": 467,
+#             "HEROMOTOCO": 1348,
+#             "HINDALCO": 1363,
+#             "HINDUNILVR": 1394,
+#             "ICICIBANK": 4963,
+#             "ITC": 1660,
+#             "INDUSINDBK": 5258,
+#             "INFY": 1594,
+#             "JSWSTEEL": 11723,
+#             "KOTAKBANK": 1922,
+#             "LTIM": 17818,
+#             "LT": 11483,
+#             "M&M": 2031,
+#             "MARUTI": 10999,
+#             "NTPC": 11630,
+#             "NESTLEIND": 17963,
+#             "ONGC": 2475,
+#             "POWERGRID": 14977,
+#             "RELIANCE": 2885,
+#             "SBILIFE": 21808,
+#             "SHRIRAMFIN": 4306,
+#             "SBIN": 3045,
+#             "SUNPHARMA": 3351,
+#             "TCS": 11536,
+#             "TATACONSUM": 3432,
+#             "TATAMOTORS": 3456,
+#             "TATASTEEL": 3499,
+#             "TECHM": 13538,
+#             "TITAN": 3506,
+#             "ULTRACEMCO": 11532,
+#             "WIPRO": 3787,
+#             "ABB": 13,
+#             "ADANIENSOL": 10217,
+#             "ADANIGREEN": 3563,
+#             "ADANIPOWER": 17388,
+#             "ATGL": 6066,
+#             "AMBUJACEM": 1270,
+#             "DMART": 19913,
+#             "BAJAJHLDNG": 305,
+#             "BANKBARODA": 4668,
+#             "BERGEPAINT": 404,
+#             "BEL": 383,
+#             "BOSCHLTD": 2181,
+#             "CANBK": 10794,
+#             "CHOLAFIN": 685,
+#             "COLPAL": 15141,
+#             "DLF": 14732,
+#             "DABUR": 772,
+#             "GAIL": 4717,
+#             "GODREJCP": 10099,
+#             "HAVELLS": 9819,
+#             "HAL": 2303,
+#             "ICICIGI": 21770,
+#             "ICICIPRULI": 18652,
+#             "IOC": 1624,
+#             "IRCTC": 13611,
+#             "IRFC": 2029,
+#             "NAUKRI": 13751,
+#             "INDIGO": 11195,
+#             "JINDALSTEL": 6733,
+#             "JIOFIN": 18143,
+#             "LICI": 9480,
+#             "MARICO": 4067,
+#             "PIDILITIND": 2664,
+#             "PFC": 14299,
+#             "PNB": 10666,
+#             "RECLTD": 15355,
+#             "SBICARD": 17971,
+#             "SRF": 3273,
+#             "MOTHERSON": 4204,
+#             "SHREECEM": 3103,
+#             "SIEMENS": 3150,
+#             "TVSMOTOR": 8479,
+#             "TATAMTRDVR": 16965,
+#             "TATAPOWER": 3426,
+#             "TORNTPHARM": 3518,
+#             "TRENT": 1964,
+#             "VBL": 18921,
+#             "VEDL": 3063,
+#             "ZOMATO": 5097,
+#             "ZYDUSLIFE": 7929,
+#             "ACC": 22,
+#             "AUBANK": 21238,
+#             "ABCAPITAL": 21614,
+#             "ALKEM": 11703,
+#             "ASHOKLEY": 212,
+#             "ASTRAL": 14418,
+#             "AUROPHARMA": 275,
+#             "BALKRISIND": 335,
+#             "BANDHANBNK": 2263,
+#             "BHARATFORG": 422,
+#             "BHEL": 438,
+#             "COFORGE": 11543,
+#             "CONCOR": 4749,
+#             "CUMMINSIND": 1901,
+#             "DALBHARAT": 8075,
+#             "DIXON": 21690,
+#             "ESCORTS": 958,
+#             "FEDERALBNK": 1023,
+#             "GMRINFRA": 13528,
+#             "GODREJPROP": 17875,
+#             "GUJGASLTD": 10599,
+#             "HDFCAMC": 4244,
+#             "HINDPETRO": 1406,
+#             "IDFCFIRSTB": 11184,
+#             "INDHOTEL": 1512,
+#             "INDUSTOWER": 29135,
+#             "JUBLFOOD": 18096,
+#             "LTF": 24948,
+#             "LTTS": 18564,
+#             "LUPIN": 10440,
+#             "MRF": 2277,
+#             "M&MFIN": 13285,
+#             "MFSL": 2142,
+#             "MAXHEALTH": 22377,
+#             "MPHASIS": 4503,
+#             "NMDC": 15332,
+#             "OBEROIRLTY": 20242,
+#             "OFSS": 10738,
+#             "PIIND": 24184,
+#             "PAGEIND": 14413,
+#             "PERSISTENT": 18365,
+#             "PETRONET": 11351,
+#             "POLYCAB": 9590,
+#             "SAIL": 2963,
+#             "SUZLON": 12018,
+#             "TATACOMM": 3721,
+#             "TIINDIA": 312,
+#             "UPL": 11287,
+#             "IDEA": 14366,
+#             "YESBANK": 11915,
+#         }
+
+#         start_date = (dt.datetime.now().replace(hour=9, minute=15) - dt.timedelta(days=30)).strftime('%Y-%m-%d %H:%M')
+#         end_date = dt.datetime.now().replace(hour=15, minute=30).strftime('%Y-%m-%d %H:%M')
+#         # end_date = (dt.datetime.now() - dt.timedelta(days=15)).strftime('%Y-%m-%d %H:%M')
+
+#         # # Manually specify the end_date
+#         # end_date_str = '2024-07-24 15:30'  # Example end date
+#         # end_date = dt.datetime.strptime(end_date_str, '%Y-%m-%d %H:%M')
+#         # # Calculate the start_date as 30 days before the end_date
+#         # start_date = end_date - dt.timedelta(days=30)
+#         # Format both dates as strings
+#         # start_date = start_date.strftime('%Y-%m-%d %H:%M')
+#         # end_date = end_date.strftime('%Y-%m-%d %H:%M')
+
+#         # if invest(available_cash):
+#         #     checkforinvestmentopportunities( headers, companiesdict, available_cash, start_date, end_date)
+#         # else:
+#         #     checkforsellingopportunities( headers, companiesdict, available_cash, start_date, end_date)
+        
+
+#         checkforinvestmentopportunities( headers, companiesdict, available_cash, start_date, end_date)
+#         checkforsellingopportunities( headers, companiesdict, available_cash, start_date, end_date)
+
 def main():
-    # Check if today is a business day and then fetch funds
-    now = dt.datetime.now()
-    
-    if is_business_day(now):
-        # Retry login with delay if needed
-        max_retries = 2
-        retry_delay = 1
-        headers = None
-        msg = None
+    api_key = os.getenv('API_KEY')
+    username = os.getenv('USERNAME')
+    password = os.getenv('MPIN')
+    tokenenv = os.getenv('TOKEN')
+    email_pass = os.getenv('EMAIL_PASS')
 
-        # Add this to print environment variables for debugging
-        api_key = os.getenv('API_KEY')
-        username = os.getenv('USERNAME')
-        password = os.getenv('MPIN')
-        tokenenv = os.getenv('TOKEN')
-        email_pass = os.getenv('EMAIL_PASS')
+    # # Manually specify the end_date
+    end_date_str = '2024-08-09 15:30'  # Example end date
+    end_date = dt.datetime.strptime(end_date_str, '%Y-%m-%d %H:%M')
+    # Calculate the start_date as 30 days before the end_date
+    start_date = end_date - dt.timedelta(days=30)
+    # Format both dates as strings
+    start_date = start_date.strftime('%Y-%m-%d %H:%M')
+    end_date = end_date.strftime('%Y-%m-%d %H:%M')
 
-        # logging.info(f"API_KEY: {api_key}")
-        # logging.info(f"USERNAME: {username}")
-        # logging.info(f"PWD: {password}")
-        # logging.info(f"TOKEN: {tokenenv}")
-        # logging.info(f"EMAIL_PASS: {email_pass}")
+    headers, msg = my_login(api_key,password,username,tokenenv)
 
-        if not all([api_key, username, password, tokenenv, email_pass]):
-            logging.error("Missing environment variables for API login.")
-        else:
-            logging.info("All environment variables are set.")
-    
-        for attempt in range(max_retries):
-            headers, msg = my_login(api_key,password,username,tokenenv)
-
-            if msg == 'SUCCESS':
-                logging.info("Login successful.")
-                break
-            else:
-                logging.error(f"Login attempt {attempt + 1} failed: {msg}")
-                if attempt < max_retries - 1:
-                    logging.info(f"Retrying in {retry_delay} second(s)...")
-                    time.sleep(retry_delay)
-        if msg == 'SUCCESS':
-            # funds = myfunds(headers)
-            # available_cash = funds.get('availablecash', 0)
-            available_cash = myfunds(headers)
-
-        companiesdict = {
+    available_cash = 15000
+    companiesdict = {
             "ADANIENT": 25,
             "ADANIPORTS": 15083,
             "APOLLOHOSP": 157,
@@ -828,28 +1022,9 @@ def main():
             "YESBANK": 11915,
         }
 
-        start_date = (dt.datetime.now().replace(hour=9, minute=15) - dt.timedelta(days=30)).strftime('%Y-%m-%d %H:%M')
-        end_date = dt.datetime.now().replace(hour=15, minute=30).strftime('%Y-%m-%d %H:%M')
-        # end_date = (dt.datetime.now() - dt.timedelta(days=15)).strftime('%Y-%m-%d %H:%M')
-
-        # # Manually specify the end_date
-        # end_date_str = '2024-07-24 15:30'  # Example end date
-        # end_date = dt.datetime.strptime(end_date_str, '%Y-%m-%d %H:%M')
-        # # Calculate the start_date as 30 days before the end_date
-        # start_date = end_date - dt.timedelta(days=30)
-        # Format both dates as strings
-        # start_date = start_date.strftime('%Y-%m-%d %H:%M')
-        # end_date = end_date.strftime('%Y-%m-%d %H:%M')
-
-        # if invest(available_cash):
-        #     checkforinvestmentopportunities( headers, companiesdict, available_cash, start_date, end_date)
-        # else:
-        #     checkforsellingopportunities( headers, companiesdict, available_cash, start_date, end_date)
-        
-
-        checkforinvestmentopportunities( headers, companiesdict, available_cash, start_date, end_date)
-        checkforsellingopportunities( headers, companiesdict, available_cash, start_date, end_date)
-        
+    checkforinvestmentopportunities( headers, companiesdict, available_cash, start_date, end_date)
+    checkforsellingopportunities( headers, companiesdict, available_cash, start_date, end_date)
+    pass        
 if __name__ == '__main__':
     main()
 
