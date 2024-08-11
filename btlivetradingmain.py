@@ -363,7 +363,7 @@ def send_email(message):
     msg.add_alternative(html_content, subtype='html')
 
     sender_email = 'dora42240@gmail.com'
-    recipients = ['vu4f2122034@pvppcoe.ac.in','mitulcha13@gmail.com','shaneesharma33@gmail.com','nikhilmali810@gmail.com','Ayushghag99@gmail.com','ramdaschaugale33@gmail.com','shaamakm@gmail.com'] #, 'babudora00@gmail.com']
+    recipients = ['vu4f2122034@pvppcoe.ac.in']#,'mitulcha13@gmail.com','shaneesharma33@gmail.com','nikhilmali810@gmail.com','Ayushghag99@gmail.com','ramdaschaugale33@gmail.com','shaamakm@gmail.com'] #, 'babudora00@gmail.com']
     
     msg['Subject'] = "Trading details from Surya"
     msg['From'] = sender_email
