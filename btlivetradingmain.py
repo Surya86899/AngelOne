@@ -448,6 +448,22 @@ def checkforinvestmentopportunities( headers, companiesdict, available_cash, sta
     - end_date (str): End date for historical data in format '%Y-%m-%d'.
     """
     
+    # Read the CSV file into a DataFrame
+    csv_file_path = "investment.csv"
+    try:
+        df = pd.read_csv(csv_file_path, header=None)
+    except FileNotFoundError:
+        logging.error(f"File not found: {csv_file_path}")
+        return
+    except Exception as e:
+        logging.error(f"Error reading {csv_file_path}: {e}")
+        return
+    # Ensure correct column names
+    column_names = ['action','quantity','stock','stock_token','date','buy_price','sl']
+    df.columns = column_names
+
+    last_invested_comp_token = df['stock_token'].iloc[-1]
+
     investment = []
     
     for i, (symbol, token) in enumerate(companiesdict.items(), start=1):
@@ -585,8 +601,8 @@ def checkforsellingopportunities( headers, companiesdict, available_cash, start_
         # print(today)
         # print(sl)
         # print(targetnotach)
-        logging.info(today["Timestamp"].date())
-        logging.info(max_holding_date.date())
+        
+        logging.info(f"Max holding date for {stock}: {max_holding_date.date()}")
 
         if today["Timestamp"].date() >= max_holding_date.date(): #time.time >= 15:15 and
             # Sell on the max holding period
@@ -646,8 +662,9 @@ def checkforsellingopportunities( headers, companiesdict, available_cash, start_
 
 
     # Save updated DataFrame to CSV
-    df.to_csv(csv_file_path, index=False,header=False)
-    logging.info(f"Updated DataFrame saved to {csv_file_path}.")
+    if len(updated_rows) > 0 or len(rows_to_delete) > 0:
+        df.to_csv(csv_file_path, index=False,header=False)  
+        logging.info(f"Updated DataFrame saved to {csv_file_path}.")
 
 def main():
     # Check if today is a business day and then fetch funds
