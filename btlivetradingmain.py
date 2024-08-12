@@ -462,7 +462,12 @@ def checkforinvestmentopportunities( headers, companiesdict, available_cash, sta
     column_names = ['action','quantity','stock','stock_token','date','buy_price','sl']
     df.columns = column_names
 
-    last_invested_comp_token = df['stock_token'].iloc[-1]
+    last_invested_comp_token = 0
+    
+    # Check if the DataFrame is not empty before accessing the last element
+    if not df.empty:
+        last_invested_comp_token = df['stock_token'].iloc[-1]
+
 
     investment = []
     
@@ -478,6 +483,8 @@ def checkforinvestmentopportunities( headers, companiesdict, available_cash, sta
                 logging.warning(f"No data available for {symbol}")
                 continue
             if to_invest(historical_data):
+                if token == last_invested_comp_token:
+                    continue
                 today = historical_data.iloc[-1]
                 # calculating no of shares that can be buyed
                 max_shares = math.floor(available_cash / today['Close'])
