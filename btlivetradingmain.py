@@ -615,14 +615,14 @@ def checkforsellingopportunities( headers, companiesdict, available_cash, start_
             # Sell on the max holding period
             sell_price = today['Close']
             updated_rows.append((index, 'Max Holding Period', sell_price))
-            email_msg.append(('Max Holding Period',row['quantity'],row['stock'],row['stock_token'],end_date,sell_price,'-'))
+            email_msg.append(['Max Holding Period',row['quantity'],row['stock'],row['stock_token'],end_date,sell_price,'-'])
             rows_to_delete.append(index)  # Mark for deletion
 
         elif today['Low'] <= sl:
             # Update with new stop-loss price
             sell_price = sl
             updated_rows.append((index, 'Stop Loss Hit', sell_price))
-            email_msg.append(('Stop Loss Hit',row['quantity'],row['stock'],row['stock_token'],end_date,sell_price,sl))
+            email_msg.append(['Stop Loss Hit',row['quantity'],row['stock'],row['stock_token'],end_date,sell_price,sl])
             rows_to_delete.append(index)  # Optional, depending on your logic
 
         # Check if 4% target is achieved
@@ -631,17 +631,17 @@ def checkforsellingopportunities( headers, companiesdict, available_cash, start_
                 # Update stop-loss to 2% down from the 4% target
                 new_sl = row['buy_price'] * 1.02
                 updated_rows.append((index, 'Updated SL', new_sl))
-                email_msg.append(('Updated SL',row['quantity'],row['stock'],row['stock_token'],end_date,'-',new_sl))
+                email_msg.append(['Updated SL',row['quantity'],row['stock'],row['stock_token'],end_date,'-',new_sl])
             else:
                 sell_price = row['buy_price'] * 1.04
-                email_msg.append(('Sell 4% Hit',row['quantity'],row['stock'],row['stock_token'],end_date,sell_price,'-'))
+                email_msg.append(['Sell 4% Hit',row['quantity'],row['stock'],row['stock_token'],end_date,sell_price])
                 rows_to_delete.append(index)  # Mark for deletion
 
         elif not targetnotach and today['DEMA_5'] < today['DEMA_8']:
             # Perform the sell operation
             sell_price = today['Close']
             updated_rows.append((index, 'DEMA SELL', sell_price))
-            email_msg.append(('DEMA Condition (Sell)',row['quantity'],row['stock'],row['stock_token'],end_date,sell_price,'-'))
+            email_msg.append(['DEMA Condition (Sell)',row['quantity'],row['stock'],row['stock_token'],end_date,sell_price,'-'])
             rows_to_delete.append(index)  # Mark for deletion
 
     # Update rows in DataFrame if updated_rows is properly structured
@@ -666,7 +666,6 @@ def checkforsellingopportunities( headers, companiesdict, available_cash, start_
             df = df.drop(rows_to_delete)
         else:
             logging.info("rows_to_delete is either empty or not a list of indices.")
-
 
     # Save updated DataFrame to CSV
     if len(updated_rows) > 0 or len(rows_to_delete) > 0:
@@ -890,7 +889,7 @@ def main():
         #     checkforsellingopportunities( headers, companiesdict, available_cash, start_date, end_date)
         
 
-        checkforinvestmentopportunities( headers, companiesdict, available_cash, start_date, end_date)
+        # checkforinvestmentopportunities( headers, companiesdict, available_cash, start_date, end_date)
         checkforsellingopportunities( headers, companiesdict, available_cash, start_date, end_date)
 
 # def main():
