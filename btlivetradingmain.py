@@ -889,7 +889,7 @@ def main():
         #     checkforsellingopportunities( headers, companiesdict, available_cash, start_date, end_date)
         
 
-        # checkforinvestmentopportunities( headers, companiesdict, available_cash, start_date, end_date)
+        checkforinvestmentopportunities( headers, companiesdict, available_cash, start_date, end_date)
         checkforsellingopportunities( headers, companiesdict, available_cash, start_date, end_date)
 
 # def main():
