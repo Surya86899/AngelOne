@@ -1,4 +1,4 @@
-# Volume backtesting code with brokerage Calculator exp
+# Volume backtesting code with brokerage Calculator experimentation
 
 import pandas as pd
 import numpy as np
