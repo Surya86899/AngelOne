@@ -8,5 +8,5 @@ with open(company_names, mode='r') as file:
         for company in row:
             # if company == 'LTF':
                 # continue
-            print(f'r"C:\Documents\GitHub\AngelOne\historical files\{company}-EQ_ONE_DAY_candle_data.csv",  #{i}')
+            print(f'r"C:\Documents\GitHub\AngelOne\historical files\ONE_DAY\{company}-EQ_ONE_DAY_candle_data.csv",  #{i}')
             i = i + 1

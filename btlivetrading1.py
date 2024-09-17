@@ -1,5 +1,5 @@
 import math
-import nselib
+# import nselib
 import pandas as pd
 from SmartApi import SmartConnect
 import pyotp
@@ -17,18 +17,11 @@ import csv
 import logging
 from typing import Dict, Any, List, Union
 
-from dotenv import load_dotenv
+# from dotenv import load_dotenv
 import os
 
-# Load environment variables from .env file
-load_dotenv()
-
-# Access the variables
-api_key = os.getenv('API_KEY')
-pwd = os.getenv('PWD')
-username = os.getenv('USERNAME')
-token = os.getenv('TOKEN')
-email_pass = os.getenv('EMAIL_PASS')
+# # Load environment variables from .env file
+# load_dotenv()
 
 # Set up logging configuration at the beginning of your file
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -36,18 +29,72 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 logger = logging.getLogger(__name__)
 
 # Function to check if today is a business day
+headerfornselib = {
+    "Connection": "keep-alive",
+    "Cache-Control": "max-age=0",
+    "DNT": "1",
+    "Upgrade-Insecure-Requests": "1",
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) "
+                  "Chrome/111.0.0.0 Safari/537.36",
+    "Sec-Fetch-User": "?1", "Accept": "*/*", "Sec-Fetch-Site": "none", "Sec-Fetch-Mode": "navigate",
+    "Accept-Encoding": "gzip, deflate, br", "Accept-Language": "en-US,en;q=0.9,hi;q=0.8"
+    }
+def nse_urlfetch(url):
+    r_session = requests.session()
+    nse_live = r_session.get("http://nseindia.com", headers=headerfornselib)
+    return r_session.get(url, headers=headerfornselib)
+def trading_holiday_calendar():
+    data_df = pd.DataFrame(columns=['Product', 'tradingDate', 'weekDay', 'description', 'Sr_no'])
+    url = "https://www.nseindia.com/api/holiday-master?type=trading"
+    try:
+        data_dict = nse_urlfetch(url).json()
+    except Exception as e:
+        raise ("Calendar data not found; try again later.")
+    
+    for prod in data_dict:
+        h_df = pd.DataFrame(data_dict[prod])
+        h_df['Product'] = prod
+        data_df = pd.concat([data_df, h_df], ignore_index=True)
+    
+    # Define the conditions and corresponding values
+    product_mapping = {
+        'CBM': 'Corporate Bonds',
+        'CD': 'Currency Derivatives',
+        'CM': 'Equities',
+        'CMOT': 'CMOT',
+        'COM': 'Commodity Derivatives',
+        'FO': 'Equity Derivatives',
+        'IRD': 'Interest Rate Derivatives',
+        'MF': 'Mutual Funds',
+        'NDM': 'New Debt Segment',
+        'NTRP': 'Negotiated Trade Reporting Platform',
+        'SLBS': 'Securities Lending & Borrowing Schemes'
+    }
+    
+    # Ensure 'Product' column is of type string
+    data_df['Product'] = data_df['Product'].astype(str)
+    
+    # Map the 'Product' column values to their descriptions
+    data_df['Product'] = data_df['Product'].map(product_mapping).fillna('Unknown')
+    
+    return data_df
 def is_business_day(now):
     today = now.date()
-    holidays_df = nselib.trading_holiday_calendar()  # Assuming this returns a DataFrame
-    holidays_df['tradingDate'] = pd.to_datetime(holidays_df['tradingDate'], format='%d-%b-%Y').dt.date
-    holidays = holidays_df['tradingDate'].values  # Convert to array of datetime.date objects
+    holidays_df = trading_holiday_calendar()  # Get the DataFrame from nselib
 
+    # Convert 'tradingDate' to datetime.date
+    holidays_df['tradingDate'] = pd.to_datetime(holidays_df['tradingDate'], format='%d-%b-%Y').dt.date
+    
+    # Convert 'tradingDate' column to list for easy comparison
+    holidays = holidays_df['tradingDate'].tolist()
+
+    # Check if today is a weekend or a holiday
     if today.weekday() >= 5 or today in holidays:
         return False
     return True
 
 # Function to login
-def my_login(api_key: str, username: str, pwd: str,token: str) -> tuple:
+def my_login(api_key,pwd,username,tokenenv):
     """
     Login to the API and return headers and message.
 
@@ -60,23 +107,22 @@ def my_login(api_key: str, username: str, pwd: str,token: str) -> tuple:
     - tuple: Headers and message.
     """
     smartApi = SmartConnect(api_key)
-    token = token  # Ensure this is correct and valid
 
     try:
-        totp = pyotp.TOTP(token).now()
+        totp = pyotp.TOTP(tokenenv).now()
     except Exception as e:
-        logger.error("Invalid Token: The provided token is not valid.")
+        logging.error("Invalid Token: The provided token is not valid.")
         raise e
 
     try:
         data = smartApi.generateSession(username, pwd, totp)
     except Exception as e:
-        logger.error(f"Error generating session: {e}")
+        logging.error(f"Error generating session: {e}")
         return None, None
 
     if not data['status']:
-        logger.error(data)
-        return data, None, None
+        logging.error(data)
+        return None, None
     else:
         # login api call
         # logger.info(f"Your Credentials: {data}")
@@ -117,7 +163,7 @@ def myfunds(headers):
         data = res.read()
         funds_str = data.decode('utf-8')  # Decode bytes to string
         funds_dict = json.loads(funds_str)  # Parse JSON string to dictionary
-        return 15000#funds_dict
+        return 10000#funds_dict
     except Exception as e:
         logger.error(f"An error occured: {e}")
         return None
@@ -275,7 +321,7 @@ def send_email(message):
     # Create email message object
     # Log the received message
     # logging.info(f"Received message to send: {message}")
-    
+    email_pass = os.getenv('EMAIL_PASS')
     msg = EmailMessage()
     
     # Determine table headers based on the action
@@ -305,6 +351,8 @@ def send_email(message):
                     </tbody>
                 </table>
                 <p></p>
+                <p style="color:blue">Note: <bold>Create a Good-Till-Triggered (GTT) order</bold> for your stop loss so that you save your money</p>
+                <p></p>
                 <p style="color:red">Note: This is a system-generated email. Do your analysis before investing.</p>
             </div>
         </body>
@@ -315,7 +363,7 @@ def send_email(message):
     msg.add_alternative(html_content, subtype='html')
 
     sender_email = 'dora42240@gmail.com'
-    recipients = ['vu4f2122034@pvppcoe.ac.in'] #, 'babudora00@gmail.com']
+    recipients = ['vu4f2122034@pvppcoe.ac.in','mitulcha13@gmail.com','shaneesharma33@gmail.com','nikhilmali810@gmail.com','Ayushghag99@gmail.com','ramdaschaugale33@gmail.com','shaamakm@gmail.com'] #, 'babudora00@gmail.com']
     
     msg['Subject'] = "Trading details from Surya"
     msg['From'] = sender_email
@@ -340,13 +388,22 @@ def save_in_csv(data: List[List[Union[str, int, float]]], file_name: str = 'inve
     - file_name (str): The name of the CSV file. Defaults to 'investment.csv'.
     """
     try:
-        # Open the file in append mode
-        with open(file_name, 'a', newline='') as file:
+        # Use absolute path
+        file_path = os.path.join(os.getcwd(), file_name)
+        
+        # Ensure directory exists
+        os.makedirs(os.path.dirname(file_path), exist_ok=True)
+
+        # Open the file in append mode and write data
+        with open(file_path, 'a', newline='') as file:
             writer = csv.writer(file)
             writer.writerows(data)
-        logging.info(f"Data successfully saved to {file_name}.")
+        
+        # Log successful data save
+        logging.info(f"Data successfully saved to {file_path}.")
+        
     except Exception as e:
-        logging.error(f"Error saving data to CSV: {e}")
+        logging.error(f"Error saving data to CSV: {e}, {type(e).__name__}")
 
 # Function to check buy condition
 def to_invest(historical_data):
@@ -391,11 +448,32 @@ def checkforinvestmentopportunities( headers, companiesdict, available_cash, sta
     - end_date (str): End date for historical data in format '%Y-%m-%d'.
     """
     
+    # Read the CSV file into a DataFrame
+    csv_file_path = "investment.csv"
+    try:
+        df = pd.read_csv(csv_file_path, header=None)
+    except FileNotFoundError:
+        logging.error(f"File not found: {csv_file_path}")
+        return
+    except Exception as e:
+        logging.error(f"Error reading {csv_file_path}: {e}")
+        return
+    # Ensure correct column names
+    column_names = ['action','quantity','stock','stock_token','date','buy_price','sl']
+    df.columns = column_names
+
+    last_invested_comp_token = 0
+    
+    # Check if the DataFrame is not empty before accessing the last element
+    if not df.empty:
+        last_invested_comp_token = df['stock_token'].iloc[-1]
+
+
     investment = []
     
     for i, (symbol, token) in enumerate(companiesdict.items(), start=1):
         
-        if available_cash < 10000:
+        if available_cash < 9000:
             logging.info("Available cash is below the threshold. Exiting.")
             break
 
@@ -405,6 +483,8 @@ def checkforinvestmentopportunities( headers, companiesdict, available_cash, sta
                 logging.warning(f"No data available for {symbol}")
                 continue
             if to_invest(historical_data):
+                if token == last_invested_comp_token:
+                    continue
                 today = historical_data.iloc[-1]
                 # calculating no of shares that can be buyed
                 max_shares = math.floor(available_cash / today['Close'])
@@ -419,6 +499,7 @@ def checkforinvestmentopportunities( headers, companiesdict, available_cash, sta
                 if max_shares > 0:
                     sl = today['Close'] - (today['Close'] * 0.03)
                     investment_details = ["BUY", max_shares, symbol, token, today['Timestamp'].strftime('%Y-%m-%d'),today["Close"], sl]
+                    logging.info(investment_details)
                     investment.append(investment_details)
                     available_cash = myfunds(headers)
         except Exception as e:
@@ -445,7 +526,14 @@ def checkforsellingopportunities( headers, companiesdict, available_cash, start_
     """
     # Read the CSV file into a DataFrame
     csv_file_path = "investment.csv"
-    df = pd.read_csv(csv_file_path, header=None)
+    try:
+        df = pd.read_csv(csv_file_path, header=None)
+    except FileNotFoundError:
+        logging.error(f"File not found: {csv_file_path}")
+        return
+    except Exception as e:
+        logging.error(f"Error reading {csv_file_path}: {e}")
+        return
 
     # Ensure correct column names
     column_names = ['action','quantity','stock','stock_token','date','buy_price','sl']
@@ -480,7 +568,7 @@ def checkforsellingopportunities( headers, companiesdict, available_cash, start_
 
     # Check if DataFrame is empty
     if df.empty:
-        print("No data to process.")
+        logging.info("No data to process.")
         return
 
     # Iterate over each row in the DataFrame
@@ -491,7 +579,7 @@ def checkforsellingopportunities( headers, companiesdict, available_cash, start_
             logging.warning(f"Invalid date format for row index {index}")
             continue
         if end_date[:10] == buy_date:
-            print(index)
+            logging.info(f"Skipping row {index} with buy date {buy_date} matching end_date")
             continue
         stock = row['stock']
         stock_token = row['stock_token']
@@ -520,52 +608,69 @@ def checkforsellingopportunities( headers, companiesdict, available_cash, start_
         # print(today)
         # print(sl)
         # print(targetnotach)
+        
+        logging.info(f"Max holding date for {stock}: {max_holding_date.date()}")
 
-        # Check if 4% target is achieved
-        if targetnotach and today['High'] >= (row['buy_price'] * 1.04):
-            if today['DEMA_5'] > today['DEMA_8'] > today['DEMA_13']:
-                # Update stop-loss to 2% down from the 4% target
-                new_sl = row['buy_price'] * 1.02
-                updated_rows.append((index, 'Updated SL', new_sl))
-                email_msg.append(('Updated SL',row['quantity'],row['stock'],row['stock_token'],end_date,'-',new_sl))
-            else:
-                sell_price = row['buy_price'] * 1.04
-                email_msg.append(('Sell 4% Hit',row['quantity'],row['stock'],row['stock_token'],end_date,sell_price,'-'))
-                rows_to_delete.append(index)  # Mark for deletion
+        if today["Timestamp"].date() >= max_holding_date.date(): #time.time >= 15:15 and
+            # Sell on the max holding period
+            sell_price = today['Close']
+            updated_rows.append((index, 'Max Holding Period', sell_price))
+            email_msg.append(['Max Holding Period',row['quantity'],row['stock'],row['stock_token'],end_date,sell_price,'-'])
+            rows_to_delete.append(index)  # Mark for deletion
 
         elif today['Low'] <= sl:
             # Update with new stop-loss price
             sell_price = sl
             updated_rows.append((index, 'Stop Loss Hit', sell_price))
-            email_msg.append(('Stop Loss Hit',row['quantity'],row['stock'],row['stock_token'],end_date,sell_price,sl))
+            email_msg.append(['Stop Loss Hit',row['quantity'],row['stock'],row['stock_token'],end_date,sell_price,sl])
             rows_to_delete.append(index)  # Optional, depending on your logic
+
+        # Check if 4% target is achieved
+        elif targetnotach and today['High'] >= (row['buy_price'] * 1.04):
+            if today['DEMA_5'] > today['DEMA_8'] > today['DEMA_13']:
+                # Update stop-loss to 2% down from the 4% target
+                new_sl = row['buy_price'] * 1.02
+                updated_rows.append((index, 'Updated SL', new_sl))
+                email_msg.append(['Updated SL',row['quantity'],row['stock'],row['stock_token'],end_date,'-',new_sl])
+            else:
+                sell_price = row['buy_price'] * 1.04
+                email_msg.append(['Sell 4% Hit',row['quantity'],row['stock'],row['stock_token'],end_date,sell_price])
+                rows_to_delete.append(index)  # Mark for deletion
 
         elif not targetnotach and today['DEMA_5'] < today['DEMA_8']:
             # Perform the sell operation
             sell_price = today['Close']
             updated_rows.append((index, 'DEMA SELL', sell_price))
-            email_msg.append(('DEMA Condition (Sell)',row['quantity'],row['stock'],row['stock_token'],end_date,sell_price,'-'))
+            email_msg.append(['DEMA Condition (Sell)',row['quantity'],row['stock'],row['stock_token'],end_date,sell_price,'-'])
             rows_to_delete.append(index)  # Mark for deletion
 
-        elif today["Timestamp"].date() >= max_holding_date.date(): #time.time >= 15:15 and
-            # Sell on the max holding period
-            sell_price = today['Close']
-            updated_rows.append((index, 'Max Holding Period', sell_price))
-            email_msg.append(('Max Holding Period',row['quantity'],row['stock'],row['stock_token'],end_date,sell_price,'-'))
-            rows_to_delete.append(index)  # Mark for deletion
-        
-    # Update rows in DataFrame
-    for index, new_action, new_sl in updated_rows:
-        df.loc[index, 'action'] = new_action
-        df.loc[index, 'sl'] = new_sl
+    # Update rows in DataFrame if updated_rows is properly structured
+    if updated_rows:
+        if isinstance(updated_rows, list) and all(isinstance(item, tuple) and len(item) == 3 for item in updated_rows):
+            for index, new_action, new_sl in updated_rows:
+                df.loc[index, 'action'] = new_action
+                df.loc[index, 'sl'] = new_sl
+        else:
+            logging.info("updated_rows is either empty or not structured as expected.")
 
-    if updated_rows or email_msg:
-        send_email(email_msg)
-        # Delete rows from DataFrame
-        df = df.drop(rows_to_delete)
+    # Send email if email_msg is correctly structured
+    if email_msg:
+        if isinstance(email_msg, list) and email_msg and isinstance(email_msg[0], list) and email_msg[0]:
+            send_email(email_msg)
+        else:
+            logging.info("Email message is either empty or not structured as expected.")
+
+    # Delete rows from DataFrame if rows_to_delete is properly structured
+    if rows_to_delete:
+        if isinstance(rows_to_delete, list) and all(isinstance(item, int) for item in rows_to_delete):
+            df = df.drop(rows_to_delete)
+        else:
+            logging.info("rows_to_delete is either empty or not a list of indices.")
 
     # Save updated DataFrame to CSV
-    df.to_csv(csv_file_path, index=False,header=False)
+    if len(updated_rows) > 0 or len(rows_to_delete) > 0:
+        df.to_csv(csv_file_path, index=False,header=False)  
+        logging.info(f"Updated DataFrame saved to {csv_file_path}.")
 
 def main():
     # Check if today is a business day and then fetch funds
@@ -578,8 +683,26 @@ def main():
         headers = None
         msg = None
 
+        # Add this to print environment variables for debugging
+        api_key = os.getenv('API_KEY')
+        username = os.getenv('USERNAME')
+        password = os.getenv('MPIN')
+        tokenenv = os.getenv('TOKEN')
+        email_pass = os.getenv('EMAIL_PASS')
+
+        # logging.info(f"API_KEY: {api_key}")
+        # logging.info(f"USERNAME: {username}")
+        # logging.info(f"PWD: {password}")
+        # logging.info(f"TOKEN: {tokenenv}")
+        # logging.info(f"EMAIL_PASS: {email_pass}")
+
+        if not all([api_key, username, password, tokenenv, email_pass]):
+            logging.error("Missing environment variables for API login.")
+        else:
+            logging.info("All environment variables are set.")
+    
         for attempt in range(max_retries):
-            headers, msg = my_login(api_key, username, pwd, token) # api_key, username, pwd, token are all environment secret variable
+            headers, msg = my_login(api_key,password,username,tokenenv)
 
             if msg == 'SUCCESS':
                 logging.info("Login successful.")
@@ -765,9 +888,186 @@ def main():
         # else:
         #     checkforsellingopportunities( headers, companiesdict, available_cash, start_date, end_date)
         
+
         checkforinvestmentopportunities( headers, companiesdict, available_cash, start_date, end_date)
         checkforsellingopportunities( headers, companiesdict, available_cash, start_date, end_date)
-        
+
+# def main():
+#     api_key = os.getenv('API_KEY')
+#     username = os.getenv('USERNAME')
+#     password = os.getenv('MPIN')
+#     tokenenv = os.getenv('TOKEN')
+#     email_pass = os.getenv('EMAIL_PASS')
+
+#     # # Manually specify the end_date
+#     end_date_str = '2024-08-09 15:30'  # Example end date
+#     end_date = dt.datetime.strptime(end_date_str, '%Y-%m-%d %H:%M')
+#     # Calculate the start_date as 30 days before the end_date
+#     start_date = end_date - dt.timedelta(days=30)
+#     # Format both dates as strings
+#     start_date = start_date.strftime('%Y-%m-%d %H:%M')
+#     end_date = end_date.strftime('%Y-%m-%d %H:%M')
+
+#     headers, msg = my_login(api_key,password,username,tokenenv)
+
+#     available_cash = 15000
+#     companiesdict = {
+#             "ADANIENT": 25,
+#             "ADANIPORTS": 15083,
+#             "APOLLOHOSP": 157,
+#             "ASIANPAINT": 236,
+#             "AXISBANK": 5900,
+#             "BAJAJ-AUTO": 16669,
+#             "BAJFINANCE": 317,
+#             "BAJAJFINSV": 16675,
+#             "BPCL": 526,
+#             "BHARTIARTL": 10604,
+#             "BRITANNIA": 547,
+#             "CIPLA": 694,
+#             "COALINDIA": 20374,
+#             "DIVISLAB": 10940,
+#             "DRREDDY": 881,
+#             "EICHERMOT": 910,
+#             "GRASIM": 1232,
+#             "HCLTECH": 7229,
+#             "HDFCBANK": 1333,
+#             "HDFCLIFE": 467,
+#             "HEROMOTOCO": 1348,
+#             "HINDALCO": 1363,
+#             "HINDUNILVR": 1394,
+#             "ICICIBANK": 4963,
+#             "ITC": 1660,
+#             "INDUSINDBK": 5258,
+#             "INFY": 1594,
+#             "JSWSTEEL": 11723,
+#             "KOTAKBANK": 1922,
+#             "LTIM": 17818,
+#             "LT": 11483,
+#             "M&M": 2031,
+#             "MARUTI": 10999,
+#             "NTPC": 11630,
+#             "NESTLEIND": 17963,
+#             "ONGC": 2475,
+#             "POWERGRID": 14977,
+#             "RELIANCE": 2885,
+#             "SBILIFE": 21808,
+#             "SHRIRAMFIN": 4306,
+#             "SBIN": 3045,
+#             "SUNPHARMA": 3351,
+#             "TCS": 11536,
+#             "TATACONSUM": 3432,
+#             "TATAMOTORS": 3456,
+#             "TATASTEEL": 3499,
+#             "TECHM": 13538,
+#             "TITAN": 3506,
+#             "ULTRACEMCO": 11532,
+#             "WIPRO": 3787,
+#             "ABB": 13,
+#             "ADANIENSOL": 10217,
+#             "ADANIGREEN": 3563,
+#             "ADANIPOWER": 17388,
+#             "ATGL": 6066,
+#             "AMBUJACEM": 1270,
+#             "DMART": 19913,
+#             "BAJAJHLDNG": 305,
+#             "BANKBARODA": 4668,
+#             "BERGEPAINT": 404,
+#             "BEL": 383,
+#             "BOSCHLTD": 2181,
+#             "CANBK": 10794,
+#             "CHOLAFIN": 685,
+#             "COLPAL": 15141,
+#             "DLF": 14732,
+#             "DABUR": 772,
+#             "GAIL": 4717,
+#             "GODREJCP": 10099,
+#             "HAVELLS": 9819,
+#             "HAL": 2303,
+#             "ICICIGI": 21770,
+#             "ICICIPRULI": 18652,
+#             "IOC": 1624,
+#             "IRCTC": 13611,
+#             "IRFC": 2029,
+#             "NAUKRI": 13751,
+#             "INDIGO": 11195,
+#             "JINDALSTEL": 6733,
+#             "JIOFIN": 18143,
+#             "LICI": 9480,
+#             "MARICO": 4067,
+#             "PIDILITIND": 2664,
+#             "PFC": 14299,
+#             "PNB": 10666,
+#             "RECLTD": 15355,
+#             "SBICARD": 17971,
+#             "SRF": 3273,
+#             "MOTHERSON": 4204,
+#             "SHREECEM": 3103,
+#             "SIEMENS": 3150,
+#             "TVSMOTOR": 8479,
+#             "TATAMTRDVR": 16965,
+#             "TATAPOWER": 3426,
+#             "TORNTPHARM": 3518,
+#             "TRENT": 1964,
+#             "VBL": 18921,
+#             "VEDL": 3063,
+#             "ZOMATO": 5097,
+#             "ZYDUSLIFE": 7929,
+#             "ACC": 22,
+#             "AUBANK": 21238,
+#             "ABCAPITAL": 21614,
+#             "ALKEM": 11703,
+#             "ASHOKLEY": 212,
+#             "ASTRAL": 14418,
+#             "AUROPHARMA": 275,
+#             "BALKRISIND": 335,
+#             "BANDHANBNK": 2263,
+#             "BHARATFORG": 422,
+#             "BHEL": 438,
+#             "COFORGE": 11543,
+#             "CONCOR": 4749,
+#             "CUMMINSIND": 1901,
+#             "DALBHARAT": 8075,
+#             "DIXON": 21690,
+#             "ESCORTS": 958,
+#             "FEDERALBNK": 1023,
+#             "GMRINFRA": 13528,
+#             "GODREJPROP": 17875,
+#             "GUJGASLTD": 10599,
+#             "HDFCAMC": 4244,
+#             "HINDPETRO": 1406,
+#             "IDFCFIRSTB": 11184,
+#             "INDHOTEL": 1512,
+#             "INDUSTOWER": 29135,
+#             "JUBLFOOD": 18096,
+#             "LTF": 24948,
+#             "LTTS": 18564,
+#             "LUPIN": 10440,
+#             "MRF": 2277,
+#             "M&MFIN": 13285,
+#             "MFSL": 2142,
+#             "MAXHEALTH": 22377,
+#             "MPHASIS": 4503,
+#             "NMDC": 15332,
+#             "OBEROIRLTY": 20242,
+#             "OFSS": 10738,
+#             "PIIND": 24184,
+#             "PAGEIND": 14413,
+#             "PERSISTENT": 18365,
+#             "PETRONET": 11351,
+#             "POLYCAB": 9590,
+#             "SAIL": 2963,
+#             "SUZLON": 12018,
+#             "TATACOMM": 3721,
+#             "TIINDIA": 312,
+#             "UPL": 11287,
+#             "IDEA": 14366,
+#             "YESBANK": 11915,
+#         }
+
+#     checkforinvestmentopportunities( headers, companiesdict, available_cash, start_date, end_date)
+#     checkforsellingopportunities( headers, companiesdict, available_cash, start_date, end_date)
+#     pass        
+
 if __name__ == '__main__':
     main()
 
