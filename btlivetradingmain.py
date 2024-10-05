@@ -1,3 +1,6 @@
+# This is the main file and the first working file which i used to run the algo and the results were mailed to me as well as my friends
+
+
 import math
 # import nselib
 import pandas as pd
