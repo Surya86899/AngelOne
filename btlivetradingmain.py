@@ -103,7 +103,7 @@ def myfunds(headers):
 
         # Create an HTTPSConnection with the specified CA certificates file
         conn = http.client.HTTPSConnection(
-            'apiconnect.angelbroking.com',
+            'apiconnect.angelone.in',
             context=http.client.ssl.create_default_context(cafile=ca_file)
         )
 
@@ -136,7 +136,7 @@ def myhistory(headers, exchange, symbol_token, interval, start_date, end_date):
     - pd.DataFrame: DataFrame containing historical candle data.
     """
     # Angel Broking API endpoint
-    url = "https://apiconnect.angelbroking.com/rest/secure/angelbroking/historical/v1/getCandleData"
+    url = "https://apiconnect.angelone.in/rest/secure/angelbroking/historical/v1/getCandleData"
 
     # Payload for the request
     payload = {
@@ -231,7 +231,7 @@ def calculate_brokerage(headers: Dict[str, str], transaction_type: str, quantity
     Returns:
     - float: Estimated total brokerage charges. Returns float('inf') in case of errors.
     """
-    url = "https://apiconnect.angelbroking.com/rest/secure/angelbroking/brokerage/v1/estimateCharges"
+    url = "https://apiconnect.angelone.in/rest/secure/angelbroking/brokerage/v1/estimateCharges"
     data = {
         "orders": [
             {
