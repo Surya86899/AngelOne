@@ -115,7 +115,7 @@ def myfunds(headers):
         data = res.read()
         funds_str = data.decode('utf-8')  # Decode bytes to string
         funds_dict = json.loads(funds_str)  # Parse JSON string to dictionary
-        return 10000#funds_dict
+        return 15000#funds_dict
     except Exception as e:
         logger.error(f"An error occured: {e}")
         return None
