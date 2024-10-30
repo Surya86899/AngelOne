@@ -386,9 +386,7 @@ def to_invest(historical_data):
         return True
     return False
 
-# Function to check if there are investment opportunities and if there then buy it
-def checkforinvestmentopportunities( headers, companiesdict, available_cash, start_date, end_date):
-
+def checkforinvestmentopportunities(headers, companiesdict: Dict[str, str], available_cash: float, start_date: str, end_date: str):
     """
     Check for investment opportunities based on historical data and available cash.
 
@@ -399,70 +397,76 @@ def checkforinvestmentopportunities( headers, companiesdict, available_cash, sta
     - start_date (str): Start date for historical data in format '%Y-%m-%d'.
     - end_date (str): End date for historical data in format '%Y-%m-%d'.
     """
-    
-    # Read the CSV file into a DataFrame
+
     csv_file_path = "investment.csv"
-    try:
-        df = pd.read_csv(csv_file_path, header=None)
-    except FileNotFoundError:
-        logging.error(f"File not found: {csv_file_path}")
-        return
-    except Exception as e:
-        logging.error(f"Error reading {csv_file_path}: {e}")
-        return
-    # Ensure correct column names
-    column_names = ['action','quantity','stock','stock_token','date','buy_price','sl']
-    df.columns = column_names
-
-    last_invested_comp_token = 0
     
-    # Check if the DataFrame is not empty before accessing the last element
-    if not df.empty:
-        last_invested_comp_token = df['stock_token'].iloc[-1]
+    # Check if the file exists and is non-empty
+    if os.path.exists(csv_file_path) and os.path.getsize(csv_file_path) > 0:
+        try:
+            # Read the CSV file into a DataFrame
+            df = pd.read_csv(csv_file_path, header=None)
+            # Ensure correct column names
+            df.columns = ['action', 'quantity', 'stock', 'stock_token', 'date', 'buy_price', 'sl']
+        except Exception as e:
+            logging.error(f"Error reading {csv_file_path}: {e}")
+            return
+    else:
+        # If the file doesn't exist or is empty, create an empty DataFrame with column names
+        logging.warning("CSV file is empty or not found. Proceeding without previous investments.")
+        df = pd.DataFrame(columns=['action', 'quantity', 'stock', 'stock_token', 'date', 'buy_price', 'sl'])
 
+    # Determine last invested stock token if DataFrame is not empty
+    last_invested_comp_token = df['stock_token'].iloc[-1] if not df.empty else None
 
-    investment = []
-    
+    investments = []
+
     for i, (symbol, token) in enumerate(companiesdict.items(), start=1):
-        
         if available_cash < 9000:
             logging.info("Available cash is below the threshold. Exiting.")
             break
 
         try:
+            # Fetch historical data for the company
             historical_data = myhistory(headers, "NSE", token, "ONE_DAY", start_date, end_date)
             if historical_data.empty:
                 logging.warning(f"No data available for {symbol}")
                 continue
-            if to_invest(historical_data):
-                if token == last_invested_comp_token:
-                    continue
+
+            # Check if it's a good investment opportunity
+            if to_invest(historical_data) and token != last_invested_comp_token:
                 today = historical_data.iloc[-1]
-                # calculating no of shares that can be buyed
                 max_shares = math.floor(available_cash / today['Close'])
                 logging.info(f"Max shares for {symbol}: {max_shares}")
-                
+
                 available_cash -= today["Close"] * max_shares
                 transaction_type = "BUY"
+                
+                # Check brokerage and adjust shares if necessary
                 calc_brokerage = calculate_brokerage(headers, transaction_type, max_shares, today['Close'], symbol, token)
                 if calc_brokerage > available_cash:
                     max_shares -= 1
                     logging.info(f"Adjusted max shares for {symbol}: {max_shares}")
+                
                 if max_shares > 0:
                     sl = today['Close'] - (today['Close'] * 0.03)
-                    investment_details = ["BUY", max_shares, symbol, token, today['Timestamp'].strftime('%Y-%m-%d'),today["Close"], sl]
-                    logging.info(investment_details)
-                    investment.append(investment_details)
+                    investment_details = ["BUY", max_shares, symbol, token, today['Timestamp'].strftime('%Y-%m-%d'), today["Close"], sl]
+                    logging.info(f"Investment details for {symbol}: {investment_details}")
+                    investments.append(investment_details)
+
+                    # Update available cash after each investment
                     available_cash = myfunds(headers)
+
         except Exception as e:
             logging.error(f"Error processing {symbol}: {e}")
 
+        # Add delay every 3 requests to avoid rate-limiting
         if i % 3 == 0:
             time.sleep(1)
 
-    if investment:
-        send_email(investment)
-        save_in_csv(investment)    
+    # If there are new investments, send email and save to CSV
+    if investments:
+        send_email(investments)
+        save_in_csv(investments)
 
 # Function to check if there are selling opportunities in the invested stocks and if there then sell it
 def checkforsellingopportunities( headers, companiesdict, available_cash, start_date, end_date):
