@@ -17,20 +17,21 @@ def myholdings():
         # Check if the response status is true
         if data.get('status'):
             holdings = data.get('data')
-
+        
             # Define the CSV file path
             csv_file = 'holdings.csv'
 
             # Display the holdings data in a formatted way
-            for holding in holdings:
-                print(f"Trading Symbol: {holding['tradingsymbol']}")
-                print(f"Exchange: {holding['exchange']}")
-                print(f"Quantity: {holding['quantity']}")
-                print(f"Product: {holding['product']}")
-                print(f"Average Price: {holding['averageprice']}")
-                print(f"LTP: {holding['ltp']}")
-                print(f"Profit and Loss: {holding['profitandloss']}")
-                print("----------------------------")
+            # prints of the holdings remove comment if you want to use it
+            # for holding in holdings:
+            #     print(f"Trading Symbol: {holding['tradingsymbol']}")
+            #     print(f"Exchange: {holding['exchange']}")
+            #     print(f"Quantity: {holding['quantity']}")
+            #     print(f"Product: {holding['product']}")
+            #     print(f"Average Price: {holding['averageprice']}")
+            #     print(f"LTP: {holding['ltp']}")
+            #     print(f"Profit and Loss: {holding['profitandloss']}")
+            #     print("----------------------------")
 
             # Write the holdings data to a CSV file
             with open(csv_file, mode='w', newline='') as file:
@@ -46,9 +47,11 @@ def myholdings():
                         holding['ltp'],
                         holding['profitandloss']
                     ])
+           
             print(f"Holdings data saved to {csv_file} successfully.")
 
-
+            return holdings
+        
         else:
             print("Failed to fetch holdings. Error message:", data.get('message', 'Unknown error'))
     else:
@@ -165,5 +168,4 @@ def convert_position():
     data = res.read()
     print("Position Conversion Response:")
     print(data.decode("utf-8"))
-
 

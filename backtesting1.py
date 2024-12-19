@@ -60,7 +60,7 @@ def backtest_trading_strategy(data_list, initial_capital, max_holding_period):
     invested_company = None
     buy_date = None
     start = '2023-01-01T00:00:00+05:30'
-    end = '2024-01-01T00:00:00+05:30'
+    end = '2024-12-31T00:00:00+05:30'
 
     current_start_date = pd.Timestamp(start)
     end_date = pd.Timestamp(end)
@@ -119,7 +119,8 @@ def backtest_trading_strategy(data_list, initial_capital, max_holding_period):
                     invested = True
                     invested_company = company_index
                     buy_date = current_start_date
-                    initial_sl = (today['Low'] - (today['Low'] * 0.03))
+                    # initial_sl = today['Close'] - (today['Close'] * 0.03) # Less Risky but less profitable
+                    initial_sl = (today['Low'] - (today['Low'] * 0.03)) # Risky but profitable
                     sl = initial_sl
                     targetnotach = False  # Indicates if the 4% target is achieved
 

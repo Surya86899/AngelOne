@@ -132,6 +132,7 @@ def get_gtt_rule_details(rule_id):
 
     # Print the response
     print(data.decode("utf-8"))
+    return data.decode("utf-8")
 
 # *************************Define function to get all GTT rule details*************************
 def get_gtt_allrule_details():
@@ -171,6 +172,8 @@ def get_gtt_allrule_details():
     for order in response_data["data"]:
         print(json.dumps(order, indent=4))
         print()  # Add a line space between orders
+        
+    return response_data
 
 # *************************Define function to cancel GTT rule*************************
 def cancel_gtt_rule(rule_id,symbol_token,ex_change):

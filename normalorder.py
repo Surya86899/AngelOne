@@ -79,15 +79,24 @@ def cancel_normal_order(variety,order_id):
     data = res.read()
     print(data.decode("utf-8"))
 
+    return data
+
 #  The order book typically contains information about all open orders placed by a user, including details such as order ID, order type, product type, quantity, price, and status.
 def get_normal_orderbook():
-
     conn = http.client.HTTPSConnection("apiconnect.angelbroking.com")
-
-    conn.request("GET", "/rest/secure/angelbroking/order/v1/getOrderBook", "", headers)
-    res = conn.getresponse()
-    data = res.read()
-    print(data.decode("utf-8"))
+    
+    try:
+        conn.request("GET", "/rest/secure/angelbroking/order/v1/getOrderBook", "", headers)
+        res = conn.getresponse()
+        if res.status == 200:
+            data = res.read().decode("utf-8")
+            return json.loads(data)  # Assuming JSON response
+        else:
+            print(f"Error: {res.status} {res.reason}")
+            return None
+    except Exception as e:
+        print(f"Exception occurred: {e}")
+        return None
 
 # The trade book contains information about executed trades, including details such as trade ID, order ID, exchange, symbol, transaction type (buy/sell), quantity, price, timestamp, and other relevant information about each trade.
 def get_normal_tradebook():

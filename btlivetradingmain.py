@@ -724,6 +724,7 @@ def main():
             "TITAN": 3506,
             "ULTRACEMCO": 11532,
             "WIPRO": 3787,
+            
             "ABB": 13,
             "ADANIENSOL": 10217,
             "ADANIGREEN": 3563,
@@ -774,6 +775,7 @@ def main():
             "VEDL": 3063,
             "ZOMATO": 5097,
             "ZYDUSLIFE": 7929,
+
             "ACC": 22,
             "AUBANK": 21238,
             "ABCAPITAL": 21614,
