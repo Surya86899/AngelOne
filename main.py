@@ -35,10 +35,10 @@ import normalorder      # Contains my normal order manipulation code
 # **********************************************************
 
 # ************************Historical Candle data****************************
-# # File path for the OpenAPIScripMaster.csv
+# File path for the OpenAPIScripMaster.csv
 # file_path = 'OpenAPIScripMaster.csv'
 # # Name to search for
-# name_to_search = 'SBIN'
+# name_to_search = 'ABB'
 
 # # Searching for symbol and token based on the name
 # symbol_token,trading_symbol = history.search_symbol_by_name(name_to_search, file_path)
@@ -60,45 +60,45 @@ import normalorder      # Contains my normal order manipulation code
 
 # ************************Historical Candle data through file****************************
 
-# # File path for the OpenAPIScripMaster.csv
-# file_path = 'OpenAPIScript.csv'
-# company_names = 'niftynext50.csv'
+# File path for the OpenAPIScripMaster.csv
+file_path = 'OpenAPIScript.csv'
+company_names = 'niftymidcap50.csv'
 
-# # Specify the starting line number
-# start_line_number = 0 # Change this to your desired starting line number
+# Specify the starting line number
+start_line_number = 0 # Change this to your desired starting line number
 
-# # Open the CSV file and read the contents
-# with open(company_names, mode='r') as file:
-#     csv_reader = csv.reader(file)
-#     line_counter = 0
+# Open the CSV file and read the contents
+with open(company_names, mode='r') as file:
+    csv_reader = csv.reader(file)
+    line_counter = 0
     
-#     for row in csv_reader:
-#         line_counter += 1
+    for row in csv_reader:
+        line_counter += 1
         
-#         # Skip lines until the starting line number
-#         if line_counter < start_line_number:
-#             continue
+        # Skip lines until the starting line number
+        if line_counter < start_line_number:
+            continue
         
-#         for company in row:
-#             # print(company)
-#             # Name to search for
-#             name_to_search = company
+        for company in row:
+            # print(company)
+            # Name to search for
+            name_to_search = company
 
-#             # Searching for symbol and token based on the name
-#             symbol_token, trading_symbol = history.search_symbol_by_name(name_to_search, file_path)
-#             print(symbol_token, trading_symbol)
+            # Searching for symbol and token based on the name
+            symbol_token, trading_symbol = history.search_symbol_by_name(name_to_search, file_path)
+            print(symbol_token, trading_symbol)
 
-#             if symbol_token and trading_symbol:
-#                 print(f"Token: {symbol_token}, Symbol: {trading_symbol}")
-#                 # Retrieving historical data for the symbol and token
-#                 for i in range(2023, 2024):  # Adjust the range as per your requirement
-#                     history.myhistory("NSE", symbol_token, "ONE_DAY", f"{i}-12-31 09:00", f"{i+1}-12-31 03:30", trading_symbol)
-#                     time.sleep(1)
-#                     # historydelivery.myhistory("NSE", symbol_token, "ONE_DAY", f"{i}-01-01 09:00", f"{i}-12-31 03:30", trading_symbol)
-#                     # historyAngelandNSE.merge_and_save_data(trading_symbol, "NSE", symbol_token, "ONE_DAY", f"{i}-01-01 09:00", f"{i}-12-31 03:30", file_path)
-#             else:
-#                 print(f"Name of {company} not found.")
-#         # time.sleep(1)
+            if symbol_token and trading_symbol:
+                print(f"Token: {symbol_token}, Symbol: {trading_symbol}")
+                # Retrieving historical data for the symbol and token
+                for i in range(2023, 2025):  # Adjust the range as per your requirement
+                    history.myhistory("NSE", symbol_token, "ONE_DAY", f"{i}-12-31 09:00", f"{i+1}-12-31 03:30", trading_symbol)
+                    time.sleep(1)
+                    # historydelivery.myhistory("NSE", symbol_token, "ONE_DAY", f"{i}-01-01 09:00", f"{i}-12-31 03:30", trading_symbol)
+                    # historyAngelandNSE.merge_and_save_data(trading_symbol, "NSE", symbol_token, "ONE_DAY", f"{i}-01-01 09:00", f"{i}-12-31 03:30", file_path)
+            else:
+                print(f"Name of {company} not found.")
+        # time.sleep(1)
 
 
 # ************************Historical Candle data through file****************************
@@ -124,7 +124,7 @@ import normalorder      # Contains my normal order manipulation code
 
 # *****************create gtt_rule function********************
 # Example usage
-# print("id = ",gttrules.create_gtt_rule("SBIN-EQ", "3045", "NSE", "BUY", "DELIVERY", "754", "50", "753.95", "50", "20"))
+# print("id = ",gttrules.create_gtt_rule("SBIN-EQ", "3045", "NSE", "BUY", "DELIVERY", "754", "50", "753.95", "50"))
 # *************************************************************
 
 
@@ -156,11 +156,13 @@ import normalorder      # Contains my normal order manipulation code
 
 
 # **********************get my holdings**********************
-# Example usage (Dono ka data holdings.csv mai save hota hai)
+# # Example usage (Dono ka data holdings.csv mai save hota hai)
 # holdings.myholdings()   # sirf stocks ka details      
+# print("***************************************************************************************************")
 # holdings.all_myholdings()   #stocks ke detail ke saath total(holding,invested,pnl,pnl in %)
+# print("***************************************************************************************************")
 # holdings.get_position()   # stock position track karne ke liye
-# holdings.convert_position()   # not yet ready
+# # holdings.convert_position()   # not yet ready
 # *************************************************************
 
 
@@ -179,8 +181,7 @@ import normalorder      # Contains my normal order manipulation code
 # normalorder.cancel_normal_order("NORMAL","201020000000080")
 
 # data = normalorder.get_normal_orderbook()
-
-# print(data["data"][0]["uniqueorderid"])
+# print(data["data"][-1])
 
 # data = normalorder.get_normal_individualorder(unique_order_id)
 

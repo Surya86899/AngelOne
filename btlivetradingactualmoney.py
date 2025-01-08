@@ -35,6 +35,15 @@ logger = logging.getLogger(__name__)
 # Function to check if it's a business day
 # now should be equal to = dt.datetime.now().date() for it to function properly
 def is_business_day(now):
+    """
+        Check if the given date is a business (trading) day.
+
+        Parameters:
+        - now (datetime): The date to check.
+
+        Returns:
+        - bool: True if the date is a trading day, False if it is a holiday. (Returns true even if it is a weekend as github takes care of weekdays and weekends)
+    """
     headers = {'user-agent': 'PostmanRuntime/7.26.5'}
     endpoint = "https://www.nseindia.com/api/holiday-master?type=trading"
     try:
@@ -43,11 +52,11 @@ def is_business_day(now):
         holidays_json = response.json().get('FO', [])
         holidays_df = pd.DataFrame(holidays_json)
         holidays_df['tradingDate'] = pd.to_datetime(holidays_df['tradingDate'])
-        print(now)
-        print(holidays_df)
+        logging.info(now)
+        logging.info(holidays_df)
         return not(pd.Timestamp(now) in holidays_df['tradingDate'].values)
     except (requests.RequestException, KeyError, ValueError) as e:
-        print(f"Error fetching holiday data: {e}")
+        logging.error(f"Error fetching holiday data: {e}")
         return True
 
 # Function to login that returns headers and message
@@ -102,6 +111,15 @@ def my_login(api_key,pwd,username,tokenenv):
 
 # Function to fetch funds it returns available cash of type float
 def myfunds(headers):
+    """
+        Fetch available funds in the account.
+
+        Parameters:
+        - headers (): Validation token
+
+        Returns:
+        - float: Available cash in the account in float format.
+    """
     try:
         # Specify the path to the CA certificates file
         ca_file = certifi.where()
@@ -132,17 +150,17 @@ def myfunds(headers):
 # 2024-10-21 00:00:00+05:30  551.60  561.90  547.00  548.10  11983482.0
 def myhistory(headers, exchange, symbol_token, interval, start_date, end_date):
     """
-    Fetch historical candle data from Angel Broking API.
+        Fetch historical candle data from Angel Broking API.
 
-    Parameters:
-    - exchange (str): Exchange name (e.g., "NSE").
-    - symbol_token (str or int): Symbol token for the company.
-    - interval (str): Interval of the candle data (e.g., "ONE_DAY").
-    - start_date (str): Start date and time in format '%Y-%m-%d %H:%M'.
-    - end_date (str): End date and time in format '%Y-%m-%d %H:%M'.
+        Parameters:
+        - exchange (str): Exchange name (e.g., "NSE").
+        - symbol_token (str or int): Symbol token for the company.
+        - interval (str): Interval of the candle data (e.g., "ONE_DAY").
+        - start_date (str): Start date and time in format '%Y-%m-%d %H:%M'.
+        - end_date (str): End date and time in format '%Y-%m-%d %H:%M'.
 
-    Returns:
-    - pd.DataFrame: DataFrame containing historical candle data.
+        Returns:
+        - pd.DataFrame: DataFrame containing historical candle data.
     """
     # Angel Broking API endpoint
     url = "https://apiconnect.angelone.in/rest/secure/angelbroking/historical/v1/getCandleData"
@@ -161,7 +179,7 @@ def myhistory(headers, exchange, symbol_token, interval, start_date, end_date):
         response.raise_for_status()  # Raise HTTPError for bad responses
 
         data = response.json().get('data', [])
-        # print(data)
+        # logging.info(data)
 
         if data:
             # Convert API response data to formatted DataFrame
@@ -371,6 +389,481 @@ def to_invest(historical_data):
         today['Close'] > today['Open']):
         return True
     return False
+
+# *************************************Trading functions*************************************
+
+# 1] Normal Orders
+
+# Creates normal buy order 
+def create_normal_order(headers, variety: str, trading_symbol: str, symbol_token: str, transaction_type: str, exchange: str, order_type: str, product_type: str, duration: str, price: str, square_off: str, stop_loss: str, qty: str):
+    """
+    Create Normal Order
+        Parameters:
+        - headers (Dict[str, str]): HTTP headers including authentication tokens.
+        - variety (str): Type of Order (e.g., "NORMAL","STOPLOSS","AMO","ROBO").
+        - trading_symbol (str): Symbol of the stock. (e.g., "ABB-EQ", "SBIN-EQ").
+        - symbol_token (str): Token for the stock symbol.
+        - transaction_type (str): Type of transaction (e.g., "BUY" or "SELL").
+        - exchange (str): Exchange name (e.g., "NSE").
+        - order_type (str): Another type of order (e.g., "MARKET","LIMIT","STOPLOSS_LIMIT","STOPLOSS_MARKET").
+        - product_type (str): Another type of order (e.g., "DELIVERY","CARRYFORWARD","MARGIN","INTRADAY",BO).
+        - price (str): Price per unit of the stock. (Kept 0 here or it will become Limit order).
+        - square_off (str): Only For ROBO (Bracket Order).
+        - stop_loss (str): Only For ROBO (Bracket Order).
+        - qty (str): Quantity of the stock to be traded.
+
+        Returns:
+        - str: unique_order_id if successful.
+        - None: if there is an error.
+    """
+    import http.client
+    import json
+    import certifi
+
+    try:
+        # Specify the path to the CA certificates file
+        ca_file = certifi.where()
+        logging.info(f"CA Certificates Path: {ca_file}")
+
+        # Create an HTTPSConnection with the specified CA certificates file
+        conn = http.client.HTTPSConnection(
+            'apiconnect.angelbroking.com',
+            context=http.client.ssl._create_default_https_context(cafile=ca_file)
+        )
+
+        # Construct the payload
+        payload = {
+            "variety": variety,
+            "tradingsymbol": trading_symbol,
+            "symboltoken": symbol_token,
+            "transactiontype": transaction_type,
+            "exchange": exchange,
+            "ordertype": order_type,
+            "producttype": product_type,
+            "duration": duration,
+            "price": price,
+            "squareoff": square_off,
+            "stoploss": stop_loss,
+            "quantity": qty
+        }
+        payload_str = json.dumps(payload)
+
+        # Send the POST request
+        conn.request("POST", "/rest/secure/angelbroking/order/v1/placeOrder", payload_str, headers)
+
+        # Get and decode the response
+        res = conn.getresponse()
+        data = res.read()
+        response_text = data.decode("utf-8")
+        logging.info(f"Response: {response_text}")
+
+        # Parse the response
+        response_json = json.loads(data)
+        if 'data' in response_json and 'uniqueorderid' in response_json['data']:
+            unique_order_id = response_json['data']['uniqueorderid']
+            return unique_order_id
+        else:
+            logging.error("Error: Unexpected response format.")
+            logging.info(f"Response JSON: {response_json}")
+            return None
+
+    except http.client.HTTPException as http_error:
+        logging.error(f"HTTP Exception occurred: {http_error}")
+        return None
+
+    except json.JSONDecodeError as json_error:
+        logging.error(f"JSON Decode Error: {json_error}")
+        return None
+
+    except KeyError as key_error:
+        logging.error(f"KeyError: {key_error}. Check if 'data' and 'uniqueorderid' exist in the response.")
+        return None
+
+    except Exception as general_error:
+        logging.error(f"An unexpected error occurred: {general_error}")
+        return None
+
+#  The order book typically contains information about all open orders placed by a user, including details such as order ID, order type, product type, quantity, price, and status.
+def get_normal_orderbook(headers):
+    """
+    Fetch the Normal Order Book.
+    
+    Parameters:
+    - headers (Dict[str, str]): HTTP headers including authentication tokens.
+    
+    Returns:
+    - dict: Parsed JSON response if successful.
+    - dict: Error message if there is an issue.
+    """
+    try:
+        # Configure HTTPS connection with CA certificates
+        ca_file = certifi.where()
+        conn = http.client.HTTPSConnection(
+            "apiconnect.angelbroking.com",
+            context=http.client.ssl._create_default_https_context(cafile=ca_file),
+            timeout=10  # Timeout in seconds
+        )
+        
+        # Send the GET request
+        conn.request("GET", "/rest/secure/angelbroking/order/v1/getOrderBook", "", headers)
+        res = conn.getresponse()
+
+        # Process response
+        if res.status == 200:
+            data = res.read().decode("utf-8")
+            logging.info("Order book fetched successfully.")
+            return json.loads(data)
+        else:
+            error_message = f"Error fetching order book: {res.status} {res.reason}"
+            logging.error(error_message)
+            return {"error": error_message}
+    
+    except http.client.HTTPException as http_error:
+        logging.error(f"HTTP Exception occurred: {http_error}")
+        return {"error": str(http_error)}
+    
+    except json.JSONDecodeError as json_error:
+        logging.error(f"JSON Decode Error: {json_error}")
+        return {"error": "Invalid JSON response"}
+    
+    except Exception as e:
+        logging.error(f"An unexpected error occurred: {e}")
+        return {"error": str(e)}
+    
+    finally:
+        conn.close()
+
+# 2] GTT Orders
+
+def create_gtt_rule(headers, trading_symbol, symbol_token, exchange, transaction_type, product_type, price, qty, trigger_price, disclosed_qty):
+    """
+    Create a GTT (Good Till Trigger) Rule and log it to a CSV file.
+    
+    Parameters:
+    - headers (dict): HTTP headers with authentication tokens.
+    - trading_symbol (str): Symbol of the stock (e.g., "ABB-EQ").
+    - symbol_token (str): Token for the stock symbol.
+    - exchange (str): Exchange name (e.g., "NSE").
+    - transaction_type (str): Type of transaction ("BUY" or "SELL").
+    - product_type (str): Product type ("DELIVERY", "MARGIN", etc.).
+    - price (str): Price per unit for the GTT rule.
+    - qty (str): Quantity for the GTT rule.
+    - trigger_price (str): Trigger price for the rule.
+    - disclosed_qty (str): Disclosed quantity for the rule.
+    
+    Returns:
+    - dict: API response data.
+    """
+    try:
+        # Specify the path to the CA certificates file
+        ca_file = certifi.where()
+        conn = http.client.HTTPSConnection(
+            'apiconnect.angelbroking.com',
+            context=http.client.ssl._create_default_https_context(cafile=ca_file),
+            timeout=10  # Set timeout for the connection
+        )
+
+        # Prepare the payload
+        payload = {
+            "tradingsymbol": trading_symbol,
+            "symboltoken": symbol_token,
+            "exchange": exchange,
+            "transactiontype": transaction_type,
+            "producttype": product_type,
+            "price": price,
+            "qty": qty,
+            "triggerprice": trigger_price,
+            "disclosedqty": disclosed_qty
+        }
+
+        # Log the request payload
+        logging.info(f"Creating GTT Rule with payload: {payload}")
+
+        # Send the POST request
+        conn.request("POST", "/rest/secure/angelbroking/gtt/v1/createRule", json.dumps(payload), headers)
+        res = conn.getresponse()
+
+        # Check response status
+        if res.status != 200:
+            error_message = f"Failed to create GTT rule: {res.status} {res.reason}"
+            logging.error(error_message)
+            return {"error": error_message}
+
+        # Parse the response
+        data = res.read().decode("utf-8")
+        response_data = json.loads(data)
+
+        # Extract rule ID
+        rule_id = response_data.get("data", {}).get("id")
+        if not rule_id:
+            logging.error(f"Unexpected response format: {response_data}")
+            return {"error": "Rule creation failed, no rule ID in response"}
+
+        logging.info(f"GTT Rule created successfully with ID: {rule_id}")
+
+        # Log rule details to CSV
+        try:
+            with open("gtt_rules.csv", "a", newline="") as csv_file:
+                writer = csv.writer(csv_file)
+                writer.writerow([rule_id, trading_symbol, symbol_token, transaction_type, product_type, price, qty, trigger_price, disclosed_qty])
+            logging.info("Rule details appended to gtt_rules.csv.")
+        except IOError as csv_error:
+            logging.error(f"Failed to write rule to CSV: {csv_error}")
+
+        return response_data
+
+    except http.client.HTTPException as http_error:
+        logging.error(f"HTTP Exception occurred: {http_error}")
+        return {"error": str(http_error)}
+
+    except json.JSONDecodeError as json_error:
+        logging.error(f"JSON Decode Error: {json_error}")
+        return {"error": "Invalid JSON response"}
+
+    except Exception as general_error:
+        logging.error(f"An unexpected error occurred: {general_error}")
+        return {"error": str(general_error)}
+
+    finally:
+        conn.close()
+
+def get_gtt_rule_details(headers, rule_id):
+    """
+    Retrieve details of a GTT (Good Till Trigger) Rule by its ID.
+    
+    Parameters:
+    - headers (dict): HTTP headers with authentication tokens.
+    - rule_id (str): ID of the GTT rule to retrieve details for.
+    
+    Returns:
+    - dict: Rule details if successful.
+    - dict: Error details in case of failure.
+    """
+    try:
+        # Specify the path to the CA certificates file
+        ca_file = certifi.where()
+
+        # Create an HTTPSConnection with the specified CA certificates file
+        conn = http.client.HTTPSConnection(
+            'apiconnect.angelbroking.com',
+            context=http.client.ssl._create_default_https_context(cafile=ca_file),
+            timeout=10  # Set timeout for the connection
+        )
+
+        # Construct the payload with the rule ID
+        payload = {
+            "id": rule_id
+        }
+        
+        # Log the request payload
+        logging.info(f"Fetching details for GTT Rule ID: {rule_id}")
+
+        # Make the POST request to retrieve details of the GTT rule
+        conn.request("POST", "/rest/secure/angelbroking/gtt/v1/ruleDetails", json.dumps(payload), headers)
+
+        # Get the response
+        res = conn.getresponse()
+        
+        # Check response status
+        if res.status != 200:
+            error_message = f"Failed to fetch GTT rule details: {res.status} {res.reason}"
+            logging.error(error_message)
+            return {"error": error_message}
+
+        # Parse the response data
+        data = res.read().decode("utf-8")
+        response_data = json.loads(data)
+
+        # Log the successful response
+        logging.info(f"GTT Rule Details: {response_data}")
+
+        return response_data
+
+    except http.client.HTTPException as http_error:
+        logging.error(f"HTTP Exception occurred: {http_error}")
+        return {"error": str(http_error)}
+
+    except json.JSONDecodeError as json_error:
+        logging.error(f"JSON Decode Error: {json_error}")
+        return {"error": "Invalid JSON response"}
+
+    except Exception as general_error:
+        logging.error(f"An unexpected error occurred: {general_error}")
+        return {"error": str(general_error)}
+
+    finally:
+        conn.close()
+
+# *****************Buy Share and sell gtt function *****************
+def buy_shares(headers, symbol: str, token: str, qty: str, sl: float):
+    """
+    Function to automate buying shares and setting a GTT sell rule.
+    
+    Parameters:
+    - headers (dict): HTTP headers for authentication.
+    - symbol (str): Trading symbol of the stock.
+    - token (str): Token representing the stock.
+    - qty (str): Quantity of shares to buy.
+    - sl (float): Stop-loss price for the sell order.
+    
+    Returns:
+    - dict: Final status of the buy and GTT setup process.
+    """
+    
+    # Common parameters for the buy order
+    price = square_off = stop_loss = "0"
+    variety = "NORMAL"
+    exchange = "NSE"
+    order_type = "MARKET"
+    product_type = "DELIVERY"
+    duration = "DAY"
+    max_attempts = 2
+
+    # Step 1: Place a normal buy order
+    logging.info("Attempting to place a buy order.")
+    for attempt in range(max_attempts):
+        order_id = create_normal_order(
+            headers, variety, symbol, token, "BUY", exchange, 
+            order_type, product_type, duration, price, square_off, 
+            stop_loss, qty
+        )
+
+        # Fetch the latest order book to verify order status
+        orderbook = get_normal_orderbook(headers)
+        if not orderbook:
+            logging.error("Failed to fetch order book. Retrying...")
+            continue
+
+        # Check the latest order status
+        last_order = orderbook.get("data", [])[-1] if orderbook.get("data") else None
+        if last_order and last_order.get("orderstatus") != "rejected":
+            logging.info(f"Buy order placed successfully: {last_order}")
+            break
+        else:
+            logging.warning(f"Attempt {attempt + 1} failed. Retrying...")
+            time.sleep(2)  # Small delay before retry
+    else:
+        logging.error("Buy order failed after maximum attempts.")
+        return {"status": "failure", "reason": "Buy order rejected"}
+
+    # Step 2: Set a GTT Sell rule
+    logging.info("Attempting to set a GTT Sell rule.")
+    for attempt in range(max_attempts):
+        risk_trigger_price = sl
+        risk_price = sl - 5
+
+        rule_id = create_gtt_rule(
+            headers, symbol, token, exchange, "SELL", product_type, 
+            risk_price, qty, risk_trigger_price, qty
+        )
+
+        if not rule_id:
+            logging.error("Failed to create GTT rule. Retrying...")
+            time.sleep(2)
+            continue
+
+        # Verify the status of the GTT rule
+        gtt_details = get_gtt_rule_details(headers, rule_id)
+        if gtt_details and gtt_details.get("data", {}).get("status") == "NEW":
+            logging.info(f"GTT Sell rule created successfully: {gtt_details}")
+            return {"status": "success", "buy_order_id": order_id, "gtt_rule_id": rule_id}
+        else:
+            logging.warning(f"Attempt {attempt + 1} failed. Retrying...")
+            time.sleep(2)
+    else:
+        logging.error("GTT Sell rule creation failed after maximum attempts.")
+        return {"status": "failure", "reason": "GTT rule creation failed"}
+
+# *************************************Trading functions*************************************
+
+# min_cash_to_buy is the minimum amount of cash that should be available to buy shares (10000,30000) (e.g. 10000)
+# risk is to keep the sl below close (less risk less profit) / low (more risk more profit)           (e.g. "low")
+def checkforinvestmentopportunities(headers, companiesdict: Dict[str, str], available_cash: float, min_cash_to_buy: float, start_date: str, end_date: str, risk: str):
+    """
+    Check for investment opportunities based on historical data and available cash.
+
+    Parameters:
+    - headers (dict): HTTP headers for API requests.
+    - companiesdict (Dict[str, str]): Dictionary with company symbols and their tokens.
+    - available_cash (float): Amount of cash available for investment.
+    - min_cash_to_buy (float): Minimum amount of cash to initiate an investment.
+    - start_date (str): Start date for historical data in format '%Y-%m-%d'.
+    - end_date (str): End date for historical data in format '%Y-%m-%d'.
+    - risk (str): Column name to determine stop-loss (e.g., 'Close', 'Low').
+    
+    Returns:
+    - List[Dict]: List of successful investment details.
+    """
+
+    logging.basicConfig(
+        level=logging.INFO,
+        format="%(asctime)s - %(levelname)s - %(message)s"
+    )
+    investments = []
+
+    for i, (symbol, token) in enumerate(companiesdict.items(), start=1):
+        # Check if there is enough cash to proceed
+        if available_cash < min_cash_to_buy:
+            logging.info("Available cash is below the minimum threshold. Exiting.")
+            break
+
+        try:
+            # Fetch historical data for the company
+            logging.info(f"Fetching historical data for {symbol}...")
+            historical_data = myhistory(headers, "NSE", token, "ONE_DAY", start_date, end_date)
+            if historical_data.empty:
+                logging.warning(f"No historical data available for {symbol}. Skipping.")
+                continue
+
+            # Check investment criteria
+            if to_invest(historical_data):
+                today = historical_data.iloc[-1]  # Get the latest day's data
+                max_shares = math.floor(available_cash / today["Close"])
+                logging.info(f"Calculated max shares for {symbol}: {max_shares}")
+
+                if max_shares > 0:
+                    # Calculate stop-loss price
+                    sl = today[risk] - (today[risk] * 0.03)
+                    full_symbol = f"{symbol}-EQ"
+
+                    # Execute the buy order
+                    buy_response = buy_shares(headers, full_symbol, token, str(max_shares), sl)
+                    if buy_response and buy_response["status"] == "success":
+                        # Record the investment details
+                        investment_details = {
+                            "transaction_type": "BUY",
+                            "shares": max_shares,
+                            "symbol": full_symbol,
+                            "token": token,
+                            "date": today["Timestamp"].strftime('%Y-%m-%d'),
+                            "price": today["Close"],
+                            "stop_loss": sl
+                        }
+                        investments.append(investment_details)
+                        logging.info(f"Investment successful for {symbol}: {investment_details}")
+
+                        # Update available cash
+                        available_cash -= max_shares * today["Close"]
+
+                        break # As investment is done and there is no cash left for further investment
+                    else:
+                        logging.error(buy_response["reason"])
+                else:
+                    logging.warning(f"Insufficient cash to buy even one share of {symbol}. Skipping.")
+
+        except Exception as e:
+            logging.error(f"Error processing {symbol}: {e}")
+
+        # Add delay every 3 requests to avoid rate-limiting
+        if i % 3 == 0:
+            logging.info("Adding a delay to avoid rate-limiting...")
+            time.sleep(1)
+
+    # # If there are new investments, send email and save to CSV
+    if investment_details:
+        send_email(investments)
+        # save_in_csv(investments)
+
 
 
 

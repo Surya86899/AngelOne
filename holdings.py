@@ -17,6 +17,7 @@ def myholdings():
         # Check if the response status is true
         if data.get('status'):
             holdings = data.get('data')
+            return holdings
         
             # Define the CSV file path
             csv_file = 'holdings.csv'
@@ -57,6 +58,8 @@ def myholdings():
     else:
         print("Failed to fetch holdings. HTTP status code:", response.status_code)
 
+# res = myholdings()
+# print(res)
 
 def all_myholdings():
     # Make the GET request using certifi for SSL certificate verification
@@ -70,6 +73,7 @@ def all_myholdings():
         # Check if the response status is true
         if data.get('status'):
             holdings = data.get('data').get('holdings')
+            return holdings
 
             # Define the CSV file path
             csv_file = 'holdings.csv'
@@ -127,6 +131,8 @@ def all_myholdings():
     else:
         print("Failed to fetch holdings. HTTP status code:", response.status_code)
 
+# res = all_myholdings()
+# print(res)
 
 def get_position():
     conn = http.client.HTTPSConnection('apiconnect.angelbroking.com')

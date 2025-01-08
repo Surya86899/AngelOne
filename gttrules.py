@@ -6,7 +6,7 @@ import os
 from headers import headers
 
 # *************************Define function to create GTT rule*************************
-def create_gtt_rule(trading_symbol, symbol_token, exchange, transaction_type, product_type, price, qty, trigger_price, disclosed_qty, time_period):
+def create_gtt_rule(trading_symbol, symbol_token, exchange, transaction_type, product_type, price, qty, trigger_price, disclosed_qty):
     # Specify the path to the CA certificates file
     ca_file = certifi.where()
 
@@ -27,7 +27,6 @@ def create_gtt_rule(trading_symbol, symbol_token, exchange, transaction_type, pr
         "qty": qty,
         "triggerprice": trigger_price,
         "disclosedqty": disclosed_qty,
-        "timeperiod": time_period
     }
 
     # Make the POST request
@@ -46,9 +45,11 @@ def create_gtt_rule(trading_symbol, symbol_token, exchange, transaction_type, pr
     # Append the rule parameters and ID to a CSV file
     with open("gtt_rules.csv", "a", newline="") as csv_file:
         writer = csv.writer(csv_file)
-        writer.writerow([rule_id, trading_symbol, symbol_token, transaction_type, product_type, price, qty, time_period])
+        writer.writerow([rule_id, trading_symbol, symbol_token, transaction_type, product_type, price, qty])
 
-    return rule_id
+    return response_data
+
+# print(create_gtt_rule("SBIN-EQ", "3045", "NSE", "SELL", "DELIVERY", "754", "50", "753.95", "50"))
 
 # *************************Define function to modify GTT rule*************************
 def modify_gtt_rule(rule_id, trading_symbol, symbol_token, exchange, transaction_type, product_type, price, qty, trigger_price, disclosed_qty, time_period):
@@ -134,6 +135,8 @@ def get_gtt_rule_details(rule_id):
     print(data.decode("utf-8"))
     return data.decode("utf-8")
 
+# get_gtt_rule_details(4163522)
+
 # *************************Define function to get all GTT rule details*************************
 def get_gtt_allrule_details():
     # Specify the path to the CA certificates file
@@ -174,6 +177,9 @@ def get_gtt_allrule_details():
         print()  # Add a line space between orders
         
     return response_data
+
+# res = get_gtt_allrule_details()
+# print(res["data"])
 
 # *************************Define function to cancel GTT rule*************************
 def cancel_gtt_rule(rule_id,symbol_token,ex_change):
@@ -234,3 +240,10 @@ def cancel_gtt_rule(rule_id,symbol_token,ex_change):
     else:
         # Print an error message if the cancellation request failed
         print(f"Failed to cancel GTT rule with ID {rule_id}. Error: {data.decode('utf-8')}")
+
+
+
+# for i in res["data"]:
+#     if i["status"] != "CANCELLED":
+#         cancel_gtt_rule(i["id"],i["symboltoken"],i['exchange'])
+    
