@@ -62,43 +62,44 @@ import normalorder      # Contains my normal order manipulation code
 
 # File path for the OpenAPIScripMaster.csv
 file_path = 'OpenAPIScript.csv'
-company_names = 'niftymidcap50.csv'
+company_list = ['nifty50.csv','niftynext50.csv','niftymidcap50.csv']
 
 # Specify the starting line number
 start_line_number = 0 # Change this to your desired starting line number
 
 # Open the CSV file and read the contents
-with open(company_names, mode='r') as file:
-    csv_reader = csv.reader(file)
-    line_counter = 0
-    
-    for row in csv_reader:
-        line_counter += 1
+for company_names in company_list:
+    with open(company_names, mode='r') as file:
+        csv_reader = csv.reader(file)
+        line_counter = 0
         
-        # Skip lines until the starting line number
-        if line_counter < start_line_number:
-            continue
-        
-        for company in row:
-            # print(company)
-            # Name to search for
-            name_to_search = company
+        for row in csv_reader:
+            line_counter += 1
+            
+            # Skip lines until the starting line number
+            if line_counter < start_line_number:
+                continue
+            
+            for company in row:
+                # print(company)
+                # Name to search for
+                name_to_search = company
 
-            # Searching for symbol and token based on the name
-            symbol_token, trading_symbol = history.search_symbol_by_name(name_to_search, file_path)
-            print(symbol_token, trading_symbol)
+                # Searching for symbol and token based on the name
+                symbol_token, trading_symbol = history.search_symbol_by_name(name_to_search, file_path)
+                print(symbol_token, trading_symbol)
 
-            if symbol_token and trading_symbol:
-                print(f"Token: {symbol_token}, Symbol: {trading_symbol}")
-                # Retrieving historical data for the symbol and token
-                for i in range(2023, 2025):  # Adjust the range as per your requirement
-                    history.myhistory("NSE", symbol_token, "ONE_DAY", f"{i}-12-31 09:00", f"{i+1}-12-31 03:30", trading_symbol)
-                    time.sleep(1)
-                    # historydelivery.myhistory("NSE", symbol_token, "ONE_DAY", f"{i}-01-01 09:00", f"{i}-12-31 03:30", trading_symbol)
-                    # historyAngelandNSE.merge_and_save_data(trading_symbol, "NSE", symbol_token, "ONE_DAY", f"{i}-01-01 09:00", f"{i}-12-31 03:30", file_path)
-            else:
-                print(f"Name of {company} not found.")
-        # time.sleep(1)
+                if symbol_token and trading_symbol:
+                    print(f"Token: {symbol_token}, Symbol: {trading_symbol}")
+                    # Retrieving historical data for the symbol and token
+                    for i in range(2024, 2025):  # Adjust the range as per your requirement
+                        history.myhistory("NSE", symbol_token, "ONE_DAY", f"{i}-12-31 09:00", f"{i+1}-12-31 03:30", trading_symbol)
+                        time.sleep(1)
+                        # historydelivery.myhistory("NSE", symbol_token, "ONE_DAY", f"{i}-01-01 09:00", f"{i}-12-31 03:30", trading_symbol)
+                        # historyAngelandNSE.merge_and_save_data(trading_symbol, "NSE", symbol_token, "ONE_DAY", f"{i}-01-01 09:00", f"{i}-12-31 03:30", file_path)
+                else:
+                    print(f"Name of {company} not found.")
+            # time.sleep(1)
 
 
 # ************************Historical Candle data through file****************************
