@@ -59,7 +59,7 @@ def backtest_trading_strategy(data_list, initial_capital, max_holding_period):
     invested = False
     invested_company = None
     buy_date = None
-    start = '2024-01-01T00:00:00+05:30'
+    start = '2024-06-01T00:00:00+05:30'
     end = '2025-12-31T00:00:00+05:30'
 
     current_start_date = pd.Timestamp(start)

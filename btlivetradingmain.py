@@ -407,19 +407,20 @@ def checkforinvestmentopportunities(headers, companiesdict: Dict[str, str], avai
             df = pd.read_csv(csv_file_path, header=None)
             # Ensure correct column names
             df.columns = ['action', 'quantity', 'stock', 'stock_token', 'date', 'buy_price', 'sl']
+
+            # If there is existing investment data, exit early
+            if not df.empty:
+                logging.info("Investment data already exists. Skipping new investment opportunities.")
+                return
+
         except Exception as e:
             logging.error(f"Error reading {csv_file_path}: {e}")
             return
-    else:
-        # If the file doesn't exist or is empty, create an empty DataFrame with column names
-        logging.warning("CSV file is empty or not found. Proceeding without previous investments.")
-        df = pd.DataFrame(columns=['action', 'quantity', 'stock', 'stock_token', 'date', 'buy_price', 'sl'])
 
-    # Determine last invested stock token if DataFrame is not empty
-    last_invested_comp_token = df['stock_token'].iloc[-1] if not df.empty else None
+    logging.warning("CSV file is empty or not found. Proceeding with investment opportunities.")
+    df = pd.DataFrame(columns=['action', 'quantity', 'stock', 'stock_token', 'date', 'buy_price', 'sl'])
 
     investments = []
-
     for i, (symbol, token) in enumerate(companiesdict.items(), start=1):
         if available_cash < 9000:
             logging.info("Available cash is below the threshold. Exiting.")
@@ -433,20 +434,20 @@ def checkforinvestmentopportunities(headers, companiesdict: Dict[str, str], avai
                 continue
 
             # Check if it's a good investment opportunity
-            if to_invest(historical_data) and token != last_invested_comp_token:
+            if to_invest(historical_data):
                 today = historical_data.iloc[-1]
                 max_shares = math.floor(available_cash / today['Close'])
                 logging.info(f"Max shares for {symbol}: {max_shares}")
 
                 available_cash -= today["Close"] * max_shares
                 transaction_type = "BUY"
-                
+
                 # Check brokerage and adjust shares if necessary
                 calc_brokerage = calculate_brokerage(headers, transaction_type, max_shares, today['Close'], symbol, token)
                 if calc_brokerage > available_cash:
                     max_shares -= 1
                     logging.info(f"Adjusted max shares for {symbol}: {max_shares}")
-                
+
                 if max_shares > 0:
                     sl = today['Close'] - (today['Close'] * 0.03)
                     investment_details = ["BUY", max_shares, symbol, token, today['Timestamp'].strftime('%Y-%m-%d'), today["Close"], sl]
