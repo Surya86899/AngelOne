@@ -149,7 +149,19 @@ def visualize_supertrend(data, supertrend_values, uptrend, downtrend):
     plt.tight_layout()
     plt.show()
 
+def SMA(data, timeperiod):
+    """
+    Calculate Simple Moving Average (SMA) manually.
+    
+    Parameters:
+    - data (pd.Series): The input data (e.g., closing prices).
+    - timeperiod (int): The number of periods for the SMA.
 
+    Returns:
+    - pd.Series: The SMA values.
+    """
+    sma = data.rolling(window=timeperiod).mean()
+    return sma
 
 def calculate_EMA(file_path, length, start_date=None, end_date=None):
     # Step 1: Load Data from CSV

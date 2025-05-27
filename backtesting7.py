@@ -1,345 +1,16 @@
-# Volume backtesting code with brokerage Calculator for short timeframes like 5 or 15 minutes
-
+# Training AIML model
 import pandas as pd
 import numpy as np
-import math
-import csv
+import os
+from sklearn.model_selection import train_test_split
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.metrics import classification_report
+from sklearn.preprocessing import MinMaxScaler
+from keras.models import Sequential
+from keras.layers import LSTM, Dense, Dropout
+import matplotlib.pyplot as plt
 
-import math
-import pandas as pd
-
-import pandas as pd
-
-# def to_invest(historical_data):
-#     if len(historical_data) < 30:
-#         return False
-
-#     today = historical_data.iloc[-1]
-#     previous = historical_data.iloc[-2]
-
-#     dema_3 = historical_data['DEMA_3']
-#     dema_5 = historical_data['DEMA_5']
-#     dema_7 = historical_data['DEMA_7']
-#     rsi = historical_data['RSI']
-
-#     score = 0
-
-#     # 1. Strong Trend
-#     if dema_3.iloc[-1] > dema_5.iloc[-1] > dema_7.iloc[-1]:
-#         score += 1
-
-#     # 2. Strong Volume
-#     avg_volume = historical_data['Volume'].iloc[-21:-1].mean()
-#     if today['Volume'] > 1.2 * avg_volume:
-#         score += 1
-
-#     # 3. Bullish Marubozu-like candle
-#     body_size = abs(today['Close'] - today['Open'])
-#     candle_size = today['High'] - today['Low']
-#     if today['Close'] > today['Open'] and body_size > 0.6 * candle_size:
-#         score += 1
-
-#     # 4. Strong RSI
-#     if rsi.iloc[-1] > 60:
-#         score += 1
-
-#     # 5. Breakout of consolidation
-#     recent_high = historical_data['High'].iloc[-21:-1].max()
-#     if today['High'] > recent_high:
-#         score += 1
-
-#     # 6. Small upper wick
-#     upper_wick = today['High'] - today['Close']
-#     if body_size > 0 and upper_wick <= 0.3 * body_size:
-#         score += 1
-
-#     # 7. Positive momentum: today's close > 5 bars ago close
-#     if today['Close'] > historical_data['Close'].iloc[-6]:
-#         score += 1
-
-#     # Final decision
-#     return score >= 5
-
-def calculate_dema(data, period):
-    ema = data['Close'].ewm(span=period, adjust=False).mean()
-    dema = 2 * ema - ema.ewm(span=period, adjust=False).mean()
-    return dema
-
-def calculate_rsi(data, period=14):
-    """
-    Calculate the Relative Strength Index (RSI) for a given dataset.
-    
-    Parameters:
-    data (pd.DataFrame): DataFrame containing at least the 'Close' prices.
-    period (int): The period over which to calculate the RSI, default is 14.
-    
-    Returns:
-    pd.Series: A series containing the RSI values.
-    """
-    # Calculate the price changes
-    delta = data['Close'].diff()
-
-    # Calculate gains and losses
-    gain = delta.where(delta > 0, 0)  # Gains are positive changes
-    loss = -delta.where(delta < 0, 0)  # Losses are negative changes
-
-    # Calculate the average gains and average losses over the period
-    avg_gain = gain.rolling(window=period, min_periods=1).mean()
-    avg_loss = loss.rolling(window=period, min_periods=1).mean()
-
-    # Calculate the relative strength (RS)
-    rs = avg_gain / avg_loss
-
-    # Calculate RSI using the RS
-    rsi = 100 - (100 / (1 + rs))
-
-    return rsi
-
-def calculate_total_charges(buy_price, buy_quantity, sell_price, sell_quantity):
-    # Charge rates and fees
-    stt_rate_buy = 0.001  # 0.1% STT on buy
-    stt_rate_sell = 0.001  # 0.1% STT on sell
-    transaction_charge_rate = 0.0000335  # 0.00335%
-    dp_charge_per_scrip = 20  # DP charges
-    dp_gst_rate = 0.18  # GST on DP charges
-    stamp_duty_rate = 0.000076  # 0.015%
-    sebi_turnover_fee_rate = 0.000001  # 0.0001%
-    gst_rate = 0.18  # GST on brokerage and transaction charges
-
-    if buy_quantity != sell_quantity:
-        raise ValueError("Buy and Sell quantities do not match.")
-    
-    buy_value = buy_price * buy_quantity
-    sell_value = sell_price * sell_quantity
-    
-    # STT calculation
-    stt = buy_value * stt_rate_buy + sell_value * stt_rate_sell
-    
-    # Transaction charges
-    transaction_charges = (buy_value + sell_value) * transaction_charge_rate
-    
-    # DP charges on sell side only
-    dp_charges = dp_charge_per_scrip
-    dp_charges_gst = dp_charges * dp_gst_rate
-    
-    # Stamp duty
-    stamp_duty = buy_value * stamp_duty_rate + sell_value * stamp_duty_rate
-    
-    # SEBI turnover fees
-    sebi_turnover_fees = (buy_value + sell_value) * sebi_turnover_fee_rate
-    
-    # GST on transaction charges and DP charges
-    gst = (transaction_charges + dp_charges + sebi_turnover_fees) * gst_rate
-    
-    # Total charges
-    total_charges = stt + transaction_charges + dp_charges + dp_charges_gst + stamp_duty + sebi_turnover_fees + gst
-    
-    return total_charges
-
-def backtest_trading_strategy(data_list, initial_capital, max_holding_period, start_date, end_date):
-    positions = []
-    capital = initial_capital
-    profit = 0
-    invested = False
-    invested_company = None
-    buy_time = None
-    sl = None
-    target = None
-    direction = None  # 'Buy' or 'Sell'
-
-    trades = 0
-    wins = 0
-    losses = 0
-    max_profit = -float('inf')
-    max_loss = float('inf')
-    peak_capital = capital
-    max_drawdown = 0
-
-    print("=== Starting Backtest ===")
-    print(f"Initial Capital: {capital}\n")
-
-    for data in data_list:
-        data['DEMA_3'] = calculate_dema(data, 3)
-        data['DEMA_5'] = calculate_dema(data, 5)
-        data['DEMA_7'] = calculate_dema(data, 7)
-        data['RSI'] = calculate_rsi(data)
-
-    all_times = sorted(set(time for data in data_list for time in data.index))
-    all_times = [t for t in all_times if start_date <= t <= end_date]
-
-    current_index = 0
-    day_high_low = {}
-
-    while current_index < len(all_times):
-        current_time = all_times[current_index]
-        print(f"\nCurrent Time: {current_time}")
-
-        if not invested:
-            for company_index, data in enumerate(data_list):
-                if current_time not in data.index:
-                    continue
-
-                today = data.loc[current_time]
-                today_date = current_time.date()
-
-                if current_time.time() == pd.Timestamp('09:30').time():
-                    morning_data = data.between_time('09:15', '09:30')
-                    if not morning_data.empty:
-                        high = morning_data['High'].max()
-                        low = morning_data['Low'].min()
-                        day_high_low[(today_date, company_index)] = (high, low)
-                        print(f"Marked 9:15-9:30 High/Low for {company_index} | High: {high}, Low: {low}")
-
-                if current_time.time() == pd.Timestamp('09:45').time() and (today_date, company_index) in day_high_low:
-                    high, low = day_high_low[(today_date, company_index)]
-
-                    prev_volume = data.loc[:current_time].iloc[-2]['Volume'] if len(data.loc[:current_time]) >= 2 else 1
-                    volume_ratio = today['Volume'] / prev_volume if prev_volume != 0 else 0
-
-                    print(f"Checking Breakout for {company_index} | Close: {today['Close']}, Volume Ratio: {volume_ratio:.2f}")
-
-                    if today['Close'] > high and volume_ratio > 1.0:
-                        print(f"** BUY Signal ** at {today['Close']} for {company_index}")
-                        buy_price = today['Close']
-                        leverage = 5
-                        max_shares = math.floor((capital * leverage) / buy_price)
-
-                        if max_shares > 0:
-                            buy_amount = max_shares * buy_price
-                            positions.append(('Buy', current_time.strftime('%Y-%m-%d %H:%M'), buy_price, max_shares, capital, company_index))
-                            capital -= buy_amount
-                            invested = True
-                            invested_company = company_index
-                            buy_time = current_time
-
-                            sl = today['Low']
-                            target = buy_price + 2 * (buy_price - sl)
-                            direction = 'Buy'
-                            print(f"BUY Entry | Price: {buy_price}, SL: {sl}, Target: {target}, Shares: {max_shares}")
-                            break
-
-                    elif today['Close'] < low and volume_ratio > 1.2:
-                        print(f"** SELL Signal ** at {today['Close']} for {company_index}")
-                        sell_price = today['Close']
-                        leverage = 5
-                        max_shares = math.floor((capital * leverage) / sell_price)
-
-                        if max_shares > 0:
-                            sell_amount = max_shares * sell_price
-                            positions.append(('Sell', current_time.strftime('%Y-%m-%d %H:%M'), sell_price, max_shares, capital, company_index))
-                            capital -= sell_amount
-                            invested = True
-                            invested_company = company_index
-                            buy_time = current_time
-
-                            sl = today['High']
-                            target = sell_price - 2 * (sl - sell_price)
-                            direction = 'Sell'
-                            print(f"SELL Entry | Price: {sell_price}, SL: {sl}, Target: {target}, Shares: {max_shares}")
-                            break
-
-        else:
-            data = data_list[invested_company]
-
-            holding_period = 0
-            while holding_period < max_holding_period and (current_index + holding_period) < len(all_times):
-                check_time = all_times[current_index + holding_period]
-                if check_time not in data.index:
-                    holding_period += 1
-                    continue
-
-                candle = data.loc[check_time]
-
-                if check_time.date() != buy_time.date():
-                    sell_price = candle['Close']
-                    sell_reason = "End of Day"
-                    print(f"Exiting {direction} due to End of Day | Sell Price: {sell_price}")
-                    break
-
-                if direction == 'Buy':
-                    if candle['High'] >= target:
-                        sell_price = target
-                        sell_reason = "Target Hit"
-                        print(f"Target Hit for BUY | Sell Price: {sell_price}")
-                        break
-                    if candle['Low'] <= sl:
-                        sell_price = sl
-                        sell_reason = "Stoploss Hit"
-                        print(f"Stoploss Hit for BUY | Sell Price: {sell_price}")
-                        break
-
-                elif direction == 'Sell':
-                    if candle['Low'] <= target:
-                        sell_price = target
-                        sell_reason = "Target Hit"
-                        print(f"Target Hit for SELL | Sell Price: {sell_price}")
-                        break
-                    if candle['High'] >= sl:
-                        sell_price = sl
-                        sell_reason = "Stoploss Hit"
-                        print(f"Stoploss Hit for SELL | Sell Price: {sell_price}")
-                        break
-
-                holding_period += 1
-            else:
-                sell_price = data.loc[all_times[min(current_index + holding_period - 1, len(all_times)-1)]]['Close']
-                sell_reason = "Max Holding Reached"
-                print(f"Max Holding Period Exit | Sell Price: {sell_price}")
-
-            # Execute Sell/Buy to Cover
-            shares = positions[-1][3]
-            sell_amount = sell_price * shares
-            total_charges = calculate_total_charges(positions[-1][2], shares, sell_price, shares)
-            net_sell = sell_amount - total_charges
-
-            if direction == 'Buy':
-                trade_profit = net_sell - (positions[-1][2] * shares)
-                profit += trade_profit
-            else:
-                trade_profit = (positions[-1][2] * shares) - net_sell
-                profit += trade_profit
-
-            capital += net_sell
-
-            sell_time = all_times[current_index + holding_period - 1] if (current_index + holding_period - 1) < len(all_times) else current_time
-            positions.append(('Sell' if direction == 'Buy' else 'Buy to Cover', sell_time.strftime('%Y-%m-%d %H:%M'), sell_price, shares, capital, invested_company))
-
-            print(f"Closed {direction} Trade | Reason: {sell_reason} | Profit: {trade_profit:.2f} | New Capital: {capital:.2f}")
-
-            invested = False
-            invested_company = None
-
-            trades += 1
-            if trade_profit > 0:
-                wins += 1
-            else:
-                losses += 1
-            max_profit = max(max_profit, trade_profit)
-            max_loss = min(max_loss, trade_profit)
-
-            peak_capital = max(peak_capital, capital)
-            drawdown = (peak_capital - capital) / peak_capital * 100
-            max_drawdown = max(max_drawdown, drawdown)
-
-            current_index += holding_period
-            continue
-
-        current_index += 1
-
-    final_profit_percentage = ((capital - initial_capital) / initial_capital) * 100
-    accuracy = (wins / trades) * 100 if trades > 0 else 0
-
-    print("\n=== Backtest Summary ===")
-    print(f"Final Capital: {capital:.2f}")
-    print(f"Profit %: {final_profit_percentage:.2f}%")
-    print(f"Trades: {trades} | Wins: {wins} | Losses: {losses}")
-    print(f"Max Profit per Trade: {max_profit:.2f}")
-    print(f"Max Loss per Trade: {max_loss:.2f}")
-    print(f"Accuracy: {accuracy:.2f}%")
-    print(f"Max Drawdown: {max_drawdown:.2f}%")
-
-    return positions, capital, final_profit_percentage, max_profit, max_loss, accuracy, max_drawdown
-
+# List of file paths to your data files
 # Load historical stock data for multiple companies from CSV files
 file_paths = [
     r"C:\Documents\GitHub\AngelOne\historical files\FIFTEEN_MINUTE\ADANIENT-EQ_FIFTEEN_MINUTE_candle_data.csv",  #0
@@ -496,46 +167,132 @@ file_paths = [
     r"C:\Documents\GitHub\AngelOne\historical files\FIFTEEN_MINUTE\YESBANK-EQ_FIFTEEN_MINUTE_candle_data.csv",  #149
 ]
 
-# Load data into a list of DataFrames
-data_list = [pd.read_csv(file_path, parse_dates=['Timestamp'], index_col='Timestamp') for file_path in file_paths]
 
-start_date = pd.Timestamp('2025-01-01 09:15:00', tz='Asia/Kolkata')
-end_date = pd.Timestamp('2025-02-01 15:30:00', tz='Asia/Kolkata')
+# Helper function to calculate technical indicators using TA-Lib
+from ta.trend import SMAIndicator, EMAIndicator
+from ta.momentum import RSIIndicator
+from ta.volatility import BollingerBands
+from ta.trend import MACD
 
-# Run the backtest
-positions, final_capital, final_profit_percentage, max_profit, max_loss, accuracy, max_drawdown = backtest_trading_strategy(
-    data_list=data_list,
-    initial_capital=10000,
-    max_holding_period=10,
-    start_date=start_date,
-    end_date=end_date
-)
+def calculate_technical_indicators(data):
+    # Calculate Moving Averages (SMA and EMA)
+    sma_indicator = SMAIndicator(close=data['Close'], window=20)
+    data['SMA_20'] = sma_indicator.sma_indicator()
 
-# Output the results
-print("Positions:")
-for position in positions:
-    print(f"{position},")
+    ema_indicator_20 = EMAIndicator(close=data['Close'], window=20)
+    data['EMA_20'] = ema_indicator_20.ema_indicator()
 
-print("\nFinal Capital:", final_capital)
-print("Final Profit Percentage:", final_profit_percentage)
-print("Max Profit from a Trade:", max_profit)
-print("Max Loss from a Trade:", max_loss)
-print("Accuracy of Trades:", accuracy)
-print("Max Drawdown:", max_drawdown)
+    ema_indicator_50 = EMAIndicator(close=data['Close'], window=50)
+    data['EMA_50'] = ema_indicator_50.ema_indicator()
 
-# Save positions and summary to a CSV file
-df_positions = pd.DataFrame(positions, columns=['Action', 'Date', 'Price', 'Quantity', 'Capital', 'Company Index'])
-df_positions.to_csv('backtest_results1.csv', index=False, mode='w')
+    # RSI
+    rsi_indicator = RSIIndicator(close=data['Close'], window=14)
+    data['RSI'] = rsi_indicator.rsi()
 
-# Append final metrics to the CSV file
-with open('backtest_results6.csv', 'a', newline='') as file:
-    writer = csv.writer(file)
-    writer.writerow([])
-    writer.writerow(['Final Capital:', final_capital])
-    writer.writerow(['Final Profit Percentage:', final_profit_percentage])
-    writer.writerow(['Maximum Profit:', max_profit])
-    writer.writerow(['Maximum Loss:', max_loss])
-    writer.writerow(['Accuracy:', accuracy])
-    writer.writerow(['Maximum Drawdown:', max_drawdown])
+    # MACD
+    macd_indicator = MACD(close=data['Close'], window_slow=26, window_fast=12, window_sign=9)
+    data['MACD'] = macd_indicator.macd()
+    data['MACD_Signal'] = macd_indicator.macd_signal()
+    data['MACD_Hist'] = macd_indicator.macd_diff()
 
-print("Backtest results saved to backtest_results.csv")
+    # Bollinger Bands
+    bollinger = BollingerBands(close=data['Close'], window=20, window_dev=2)
+    data['BB_upper'] = bollinger.bollinger_hband()
+    data['BB_middle'] = bollinger.bollinger_mavg()
+    data['BB_lower'] = bollinger.bollinger_lband()
+
+    return data
+
+# Function to add previous day's high, low as features
+def add_previous_day_features(data):
+    data['Prev_High'] = data['High'].shift(1)
+    data['Prev_Low'] = data['Low'].shift(1)
+    data['Prev_Close'] = data['Close'].shift(1)
+    return data
+
+# Function to load data and perform feature engineering
+def load_and_preprocess_data(file_path):
+    data = pd.read_csv(file_path, parse_dates=['Timestamp'], index_col='Timestamp')
+    
+    # Sort data by Timestamp (important for time series)
+    data = data.sort_index()
+
+    # Add technical indicators
+    data = calculate_technical_indicators(data)
+    
+    # Add previous day's High, Low, Close
+    data = add_previous_day_features(data)
+    
+    # Drop rows with NaN values (can happen because of shift and indicator calculations)
+    data = data.dropna()
+
+    # Add Target: 1 for Price up, 0 for Price down (binary classification)
+    data['Target'] = np.where(data['Close'].shift(-1) > data['Close'], 1, 0)
+
+    return data
+
+# Function to train machine learning model (Random Forest)
+def train_rf_model(X_train, y_train, X_test, y_test):
+    model = RandomForestClassifier(n_estimators=100, random_state=42)
+    model.fit(X_train, y_train)
+    y_pred = model.predict(X_test)
+    
+    print("Classification Report for Random Forest Model:")
+    print(classification_report(y_test, y_pred))
+
+# Function to train deep learning model (LSTM)
+def train_lstm_model(X_train, y_train, X_test, y_test):
+    # Reshape X for LSTM input [samples, time steps, features]
+    X_train = np.reshape(X_train, (X_train.shape[0], X_train.shape[1], 1))
+    X_test = np.reshape(X_test, (X_test.shape[0], X_test.shape[1], 1))
+
+    # Define LSTM model
+    model = Sequential()
+    model.add(LSTM(units=50, return_sequences=True, input_shape=(X_train.shape[1], 1)))
+    model.add(Dropout(0.2))
+    model.add(LSTM(units=50, return_sequences=False))
+    model.add(Dropout(0.2))
+    model.add(Dense(units=1, activation='sigmoid'))
+
+    model.compile(optimizer='adam', loss='binary_crossentropy', metrics=['accuracy'])
+
+    model.fit(X_train, y_train, epochs=10, batch_size=32)
+
+    # Evaluate the model
+    y_pred = model.predict(X_test)
+    y_pred = (y_pred > 0.5)  # Convert probabilities to 0 or 1
+
+    print("Classification Report for LSTM Model:")
+    print(classification_report(y_test, y_pred))
+
+# Main function to loop over the file paths and train models
+def main():
+    for file_path in file_paths:
+        print(f"Training model for file: {file_path}")
+        
+        # Load and preprocess the data
+        data = load_and_preprocess_data(file_path)
+
+        # Prepare features and target
+        features = ['SMA_20', 'EMA_20', 'EMA_50', 'RSI', 'MACD', 'MACD_Signal', 'MACD_Hist', 'BB_upper', 'BB_middle', 'BB_lower', 'Prev_High', 'Prev_Low', 'Prev_Close']
+        X = data[features]
+        y = data['Target']
+
+        # Normalize the features using MinMaxScaler
+        scaler = MinMaxScaler(feature_range=(0, 1))
+        X_scaled = scaler.fit_transform(X)
+
+        # Split the data into training and testing sets
+        X_train, X_test, y_train, y_test = train_test_split(X_scaled, y, test_size=0.2, random_state=42)
+
+        # Train and evaluate Random Forest model
+        print("Training Random Forest model...")
+        train_rf_model(X_train, y_train, X_test, y_test)
+
+        # Train and evaluate LSTM model
+        print("Training LSTM model...")
+        train_lstm_model(X_train, y_train, X_test, y_test)
+
+# Run the main function
+if __name__ == "__main__":
+    main()
