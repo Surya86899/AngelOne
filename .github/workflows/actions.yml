@@ -2,8 +2,8 @@ name: Scheduled Workflow
 
 on:
   schedule:
-     - cron: '45 3-9 * * 1-5'  # Run at 45 minutes past each hour from 3:45 AM to 9:45 AM UTC (9:15 AM to 3:15 PM IST) on weekdays
-  workflow_dispatch:  # Allows manual triggering of the workflow
+     - cron: '45 3-9 * * 1-5' # Run at 45 minutes past each hour from 3:45 AM to 9:45 AM UTC (9:15 AM to 3:15 PM IST) on weekdays
+  workflow_dispatch: # Allows manual triggering of the workflow
 
 jobs:
   run-scheduled-task:
@@ -25,12 +25,13 @@ jobs:
         with:
           python-version: '3.11.7'
 
-      - name: Cache Python packages
+      - name: Remove existing virtual environment
+        run: rm -rf .venv
+
+      - name: Cache pip only (no .venv)
         uses: actions/cache@v3
         with:
-          path: |
-            ~/.cache/pip
-            .venv
+          path: ~/.cache/pip
           key: ${{ runner.os }}-pip-${{ hashFiles('requirements_dev.txt') }}
           restore-keys: |
             ${{ runner.os }}-pip-
@@ -39,7 +40,7 @@ jobs:
         run: |
           python -m venv .venv
           source .venv/bin/activate
-          pip install --upgrade pip
+          python -m pip install --upgrade --force-reinstall pip setuptools wheel
           pip install -r requirements_dev.txt
 
       - name: Run script
@@ -55,4 +56,4 @@ jobs:
           git commit -m 'Automated update from scheduled workflow'
           git push origin HEAD
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
