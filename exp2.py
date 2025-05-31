@@ -684,6 +684,10 @@ import os
 #     #     print(i+" ",holds[i])
 #     # print(holds)
 
+import requests
+import pandas as pd
+from datetime import datetime
+
 def is_business_day(now):
     headers = {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36',
@@ -692,19 +696,30 @@ def is_business_day(now):
         'Accept-Language': 'en-US,en;q=0.9',
         'Connection': 'keep-alive'
     }
-    endpoint = "https://www.nseindia.com/api/holiday-master?type=trading"
+    
+    session = requests.Session()
+    session.headers.update(headers)
+    
     try:
-        response = requests.get(endpoint, headers=headers)
+        # Hit NSE homepage first to get cookies
+        session.get("https://www.nseindia.com", timeout=10)
+        
+        # Now call the API with session (has cookies)
+        response = session.get("https://www.nseindia.com/api/holiday-master?type=trading", timeout=10)
         response.raise_for_status()
+        
         holidays_json = response.json().get('FO', [])
         holidays_df = pd.DataFrame(holidays_json)
         holidays_df['tradingDate'] = pd.to_datetime(holidays_df['tradingDate'])
-        return not(pd.Timestamp(now) in holidays_df['tradingDate'].values)
+        
+        return not (pd.Timestamp(now) in holidays_df['tradingDate'].values)
+    
     except (requests.RequestException, KeyError, ValueError) as e:
         print(f"Error fetching holiday data: {e}")
-        return True
-    
-now = datetime.now()
+        return True  # Assume it's a business day if we can't fetch
 
+# Example usage
+now = datetime.now()
 print(is_business_day(now))
+
 

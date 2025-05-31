@@ -39,17 +39,27 @@ def is_business_day(now):
         'Accept-Language': 'en-US,en;q=0.9',
         'Connection': 'keep-alive'
     }
-    endpoint = "https://www.nseindia.com/api/holiday-master?type=trading"
+    
+    session = requests.Session()
+    session.headers.update(headers)
+    
     try:
-        response = requests.get(endpoint, headers=headers)
+        # Hit NSE homepage first to get cookies
+        session.get("https://www.nseindia.com", timeout=10)
+        
+        # Now call the API with session (has cookies)
+        response = session.get("https://www.nseindia.com/api/holiday-master?type=trading", timeout=10)
         response.raise_for_status()
+        
         holidays_json = response.json().get('FO', [])
         holidays_df = pd.DataFrame(holidays_json)
         holidays_df['tradingDate'] = pd.to_datetime(holidays_df['tradingDate'])
-        return not(pd.Timestamp(now) in holidays_df['tradingDate'].values)
+        
+        return not (pd.Timestamp(now) in holidays_df['tradingDate'].values)
+    
     except (requests.RequestException, KeyError, ValueError) as e:
         print(f"Error fetching holiday data: {e}")
-        return True
+        return True  # Assume it's a business day if we can't fetch
 
 # Function to login
 def my_login(api_key,pwd,username,tokenenv):
