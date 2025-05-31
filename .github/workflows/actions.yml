@@ -61,7 +61,9 @@ jobs:
           git status
           git log -5 --oneline --graph
           git log origin/master -5 --oneline --graph
-
+      - name: Clean logs folder before commit
+        run: |
+          rm -rf logs/*
       - name: Commit and push changes
         run: |
           set -e  # Exit on error
