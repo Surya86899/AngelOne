@@ -64,20 +64,16 @@ jobs:
 
       - name: Commit and push changes
         run: |
-          set -e  # Exit immediately if any command fails
+          set -e  # Exit on error
 
           git config --global user.name 'github-actions[bot]'
           git config --global user.email 'github-actions[bot]@users.noreply.github.com'
-
           git remote set-url origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}
 
-          echo "Attempting to pull latest changes from origin/master..."
-          if git pull --rebase origin master; then
-            echo "Pull succeeded. Proceeding to commit and push."
-          else
-            echo "⚠️ Git pull failed. Skipping commit and push to avoid conflicts."
-            exit 0
-          fi
+          # Ensure we're on a local tracking branch
+          git fetch origin
+          git checkout master
+          git pull origin master --rebase
 
           git add .
 
@@ -85,8 +81,9 @@ jobs:
             echo "No changes to commit"
           else
             git commit -m 'Automated update from scheduled workflow'
-            git push origin HEAD
+            git push origin master
           fi
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
 
