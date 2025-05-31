@@ -2,8 +2,8 @@ name: Scheduled Workflow
 
 on:
   schedule:
-    - cron: '45 3-9 * * 1-5' # Run at 45 minutes past each hour from 3:45 AM to 9:45 AM UTC (9:15 AM to 3:15 PM IST) on weekdays
-  workflow_dispatch: # Allows manual triggering of the workflow
+    - cron: '45 3-9 * * 1-5'  # 9:15 AM to 3:15 PM IST on weekdays
+  workflow_dispatch:
 
 jobs:
   run-scheduled-task:
@@ -49,6 +49,9 @@ jobs:
           python -m pip install --upgrade --force-reinstall pip setuptools wheel
           pip install -r requirements_dev.txt
 
+      - name: Clean logs folder before script run
+        run: rm -rf logs/*
+
       - name: Run script
         run: |
           source .venv/bin/activate
@@ -61,18 +64,15 @@ jobs:
           git status
           git log -5 --oneline --graph
           git log origin/master -5 --oneline --graph
-      - name: Clean logs folder before commit
-        run: |
-          rm -rf logs/*
+
       - name: Commit and push changes
         run: |
-          set -e  # Exit on error
+          set -e
 
           git config --global user.name 'github-actions[bot]'
           git config --global user.email 'github-actions[bot]@users.noreply.github.com'
           git remote set-url origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}
 
-          # Ensure we're on a local tracking branch
           git fetch origin
           git checkout master
           git pull --rebase origin master
@@ -87,5 +87,3 @@ jobs:
           fi
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-
