@@ -73,7 +73,7 @@ jobs:
           # Ensure we're on a local tracking branch
           git fetch origin
           git checkout master
-          git pull origin master --rebase
+          git reset --hard origin/master  # hard reset to remote
 
           git add .
 
