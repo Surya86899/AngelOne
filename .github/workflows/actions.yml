@@ -69,7 +69,11 @@ jobs:
           git config --global user.email 'github-actions[bot]@users.noreply.github.com'
 
           git remote set-url origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}
-          git pull --rebase origin master
+
+          # Fetch latest remote changes and reset hard to avoid push conflicts
+          git fetch origin
+          git reset --hard origin/master
+
           git add .
 
           if git diff --cached --quiet; then
