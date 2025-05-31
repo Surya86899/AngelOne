@@ -32,7 +32,13 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 logger = logging.getLogger(__name__)
 
 def is_business_day(now):
-    headers = {'user-agent': 'PostmanRuntime/7.26.5'}
+    headers = {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36',
+        'Accept': 'application/json',
+        'Referer': 'https://www.nseindia.com/holiday-master',
+        'Accept-Language': 'en-US,en;q=0.9',
+        'Connection': 'keep-alive'
+    }
     endpoint = "https://www.nseindia.com/api/holiday-master?type=trading"
     try:
         response = requests.get(endpoint, headers=headers)
