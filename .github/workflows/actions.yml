@@ -64,15 +64,20 @@ jobs:
 
       - name: Commit and push changes
         run: |
-          set -x
+          set -e  # Exit immediately if any command fails
+
           git config --global user.name 'github-actions[bot]'
           git config --global user.email 'github-actions[bot]@users.noreply.github.com'
 
           git remote set-url origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}
 
-          # Fetch latest remote changes and reset hard to avoid push conflicts
-          git fetch origin
-          git reset --hard origin/master
+          echo "Attempting to pull latest changes from origin/master..."
+          if git pull --rebase origin master; then
+            echo "Pull succeeded. Proceeding to commit and push."
+          else
+            echo "⚠️ Git pull failed. Skipping commit and push to avoid conflicts."
+            exit 0
+          fi
 
           git add .
 
@@ -84,3 +89,4 @@ jobs:
           fi
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+

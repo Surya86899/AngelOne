@@ -105,72 +105,72 @@ jwt_token = login.my_login(logincred.api_key, logincred.username, logincred.pwd)
 
 # ************************ Historical Candle data through file for different time ****************************
 
-import csv
-import time
-from datetime import timedelta
-import pandas as pd
+# import csv
+# import time
+# from datetime import timedelta
+# import pandas as pd
 
-# === CONFIGURATION ===
-INTERVAL = "ONE_HOUR"   # change this only
-START_DATE = "2023-01-01"
-END_DATE = "2025-05-31"
-FILE_PATH = 'OpenAPIScript.csv'
-COMPANY_LIST = ['nifty50.csv', 'niftynext50.csv', 'niftymidcap50.csv']
-START_LINE_NUMBER = 0
+# # === CONFIGURATION ===
+# INTERVAL = "ONE_HOUR"   # change this only
+# START_DATE = "2023-01-01"
+# END_DATE = "2025-05-31"
+# FILE_PATH = 'OpenAPIScript.csv'
+# COMPANY_LIST = ['nifty50.csv', 'niftynext50.csv', 'niftymidcap50.csv']
+# START_LINE_NUMBER = 0
 
-# === DYNAMIC INTERVAL MAPPING ===
-INTERVAL_CONFIG = {
-    "ONE_MINUTE": {"minutes": 1, "max_days": 5},
-    "THREE_MINUTE": {"minutes": 3, "max_days": 10},
-    "FIVE_MINUTE": {"minutes": 5, "max_days": 20},
-    "TEN_MINUTE": {"minutes": 10, "max_days": 30},
-    "FIFTEEN_MINUTE": {"minutes": 15, "max_days": 40},
-    "THIRTY_MINUTE": {"minutes": 30, "max_days": 60},
-    "ONE_HOUR": {"minutes": 60, "max_days": 90},
-    "ONE_DAY": {"minutes": 1440, "max_days": 365}
-}
+# # === DYNAMIC INTERVAL MAPPING ===
+# INTERVAL_CONFIG = {
+#     "ONE_MINUTE": {"minutes": 1, "max_days": 5},
+#     "THREE_MINUTE": {"minutes": 3, "max_days": 10},
+#     "FIVE_MINUTE": {"minutes": 5, "max_days": 20},
+#     "TEN_MINUTE": {"minutes": 10, "max_days": 30},
+#     "FIFTEEN_MINUTE": {"minutes": 15, "max_days": 40},
+#     "THIRTY_MINUTE": {"minutes": 30, "max_days": 60},
+#     "ONE_HOUR": {"minutes": 60, "max_days": 90},
+#     "ONE_DAY": {"minutes": 1440, "max_days": 365}
+# }
 
-def chunk_dates(start_date, end_date, interval):
-    config = INTERVAL_CONFIG.get(interval, {"minutes": 15, "max_days": 30})
-    max_days = config["max_days"]
-    chunks = []
+# def chunk_dates(start_date, end_date, interval):
+#     config = INTERVAL_CONFIG.get(interval, {"minutes": 15, "max_days": 30})
+#     max_days = config["max_days"]
+#     chunks = []
 
-    start = pd.to_datetime(start_date + " 09:00")
-    end = pd.to_datetime(end_date + " 15:30")
+#     start = pd.to_datetime(start_date + " 09:00")
+#     end = pd.to_datetime(end_date + " 15:30")
 
-    while start < end:
-        chunk_end = min(start + timedelta(days=max_days - 1), end)
-        chunks.append((start.strftime('%Y-%m-%d %H:%M'), chunk_end.strftime('%Y-%m-%d %H:%M')))
-        start = chunk_end + timedelta(minutes=config["minutes"])
+#     while start < end:
+#         chunk_end = min(start + timedelta(days=max_days - 1), end)
+#         chunks.append((start.strftime('%Y-%m-%d %H:%M'), chunk_end.strftime('%Y-%m-%d %H:%M')))
+#         start = chunk_end + timedelta(minutes=config["minutes"])
 
-    return chunks
+#     return chunks
 
-# === MAIN SCRIPT ===
-for company_csv in COMPANY_LIST:
-    with open(company_csv, mode='r') as file:
-        csv_reader = csv.reader(file)
-        line_counter = 0
+# # === MAIN SCRIPT ===
+# for company_csv in COMPANY_LIST:
+#     with open(company_csv, mode='r') as file:
+#         csv_reader = csv.reader(file)
+#         line_counter = 0
 
-        for row in csv_reader:
-            line_counter += 1
-            if line_counter < START_LINE_NUMBER:
-                continue
+#         for row in csv_reader:
+#             line_counter += 1
+#             if line_counter < START_LINE_NUMBER:
+#                 continue
 
-            for company_name in row:
-                symbol_token, trading_symbol = history.search_symbol_by_name(company_name, FILE_PATH)
-                print(f"\n🔍 Searching: {company_name}")
+#             for company_name in row:
+#                 symbol_token, trading_symbol = history.search_symbol_by_name(company_name, FILE_PATH)
+#                 print(f"\n🔍 Searching: {company_name}")
 
-                if not symbol_token or not trading_symbol:
-                    print(f"❌ Not found: {company_name}")
-                    continue
+#                 if not symbol_token or not trading_symbol:
+#                     print(f"❌ Not found: {company_name}")
+#                     continue
 
-                print(f"✅ Token: {symbol_token}, Symbol: {trading_symbol}")
-                date_chunks = chunk_dates(START_DATE, END_DATE, INTERVAL)
+#                 print(f"✅ Token: {symbol_token}, Symbol: {trading_symbol}")
+#                 date_chunks = chunk_dates(START_DATE, END_DATE, INTERVAL)
 
-                for start, end in date_chunks:
-                    print(f"➡ Fetching {INTERVAL} data from {start} to {end} for {trading_symbol}")
-                    history.myhistory("NSE", symbol_token, INTERVAL, start, end, trading_symbol)
-                    time.sleep(1.2)
+#                 for start, end in date_chunks:
+#                     print(f"➡ Fetching {INTERVAL} data from {start} to {end} for {trading_symbol}")
+#                     history.myhistory("NSE", symbol_token, INTERVAL, start, end, trading_symbol)
+#                     time.sleep(1.2)
 
 # ************************Historical Candle data through file****************************
 
