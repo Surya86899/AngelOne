@@ -2,12 +2,16 @@ name: Scheduled Workflow
 
 on:
   schedule:
-     - cron: '45 3-9 * * 1-5' # Run at 45 minutes past each hour from 3:45 AM to 9:45 AM UTC (9:15 AM to 3:15 PM IST) on weekdays
+    - cron: '45 3-9 * * 1-5' # Run at 45 minutes past each hour from 3:45 AM to 9:45 AM UTC (9:15 AM to 3:15 PM IST) on weekdays
   workflow_dispatch: # Allows manual triggering of the workflow
 
 jobs:
   run-scheduled-task:
     runs-on: ubuntu-22.04
+
+    concurrency:
+      group: master-push
+      cancel-in-progress: true
 
     env:
       API_KEY: ${{ secrets.API_KEY }}
@@ -20,7 +24,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
         with:
-            fetch-depth: 0
+          fetch-depth: 0
 
       - name: Set up Python
         uses: actions/setup-python@v4
@@ -50,8 +54,17 @@ jobs:
           source .venv/bin/activate
           python btlivetradingmain.py
 
+      - name: Debug git status before commit
+        run: |
+          git remote -v
+          git fetch origin
+          git status
+          git log -5 --oneline --graph
+          git log origin/master -5 --oneline --graph
+
       - name: Commit and push changes
         run: |
+          set -x
           git config --global user.name 'github-actions[bot]'
           git config --global user.email 'github-actions[bot]@users.noreply.github.com'
 
@@ -66,4 +79,4 @@ jobs:
             git push origin HEAD
           fi
         env:
-           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
