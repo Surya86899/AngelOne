@@ -75,7 +75,11 @@ jobs:
 
           git fetch origin
           git checkout master
+
+          # Temporarily stash any local changes before pull
+          git stash --include-untracked || true
           git pull --rebase origin master
+          git stash pop || true
 
           git add .
 
