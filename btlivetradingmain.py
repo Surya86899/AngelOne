@@ -417,23 +417,25 @@ def checkforinvestmentopportunities(headers, companiesdict: Dict[str, str], avai
     csv_file_path = "investment.csv"
     
     # Check if the file exists and is non-empty
-    if os.path.exists(csv_file_path) and os.path.getsize(csv_file_path) > 0:
-        try:
-            # Read the CSV file into a DataFrame
-            df = pd.read_csv(csv_file_path, header=None)
-            # Ensure correct column names
-            df.columns = ['action', 'quantity', 'stock', 'stock_token', 'date', 'buy_price', 'sl']
+    try:
+        if os.path.exists(csv_file_path) and os.path.getsize(csv_file_path) > 0:
+            try:
+                df = pd.read_csv(csv_file_path, header=None)
 
-            # If there is existing investment data, exit early
-            if not df.empty:
-                logging.info("Investment data already exists. Skipping new investment opportunities.")
+                if not df.empty:
+                    logging.info("Investment data already exists. Skipping new investment opportunities.")
+                    return
+
+            except pd.errors.EmptyDataError:
+                logging.warning("CSV file is empty (no rows). Proceeding with investment opportunities.")
+            except Exception as e:
+                logging.error(f"Error reading or processing {csv_file_path}: {e}")
                 return
-
-        except Exception as e:
-            logging.error(f"Error reading {csv_file_path}: {e}")
-            return
-
-    logging.warning("CSV file is empty or not found. Proceeding with investment opportunities.")
+        else:
+            logging.warning("CSV file not found or empty (0 bytes). Proceeding with investment opportunities.")
+    except Exception as e:
+        logging.error(f"Unexpected error checking investment.csv: {e}")
+        return
     df = pd.DataFrame(columns=['action', 'quantity', 'stock', 'stock_token', 'date', 'buy_price', 'sl'])
 
     investments = []
